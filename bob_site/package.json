@@ -1,0 +1,10 @@
+{
+  "name": "bob-rescue-robot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Control room for Bob, the rescue robot",
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "livekit-server-sdk": "^2.19.1"
+  }
+}

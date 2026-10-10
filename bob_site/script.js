@@ -1,13 +1,104 @@
 const $ = (id) => document.getElementById(id);
 const BOB_VIDEO = "https://youtube.com/shorts/W0G0fOATsiU?si=inoGqdqjGMiIEF7s";
-const feed = $("feed"), badge = $("badge"), msg = $("msg"), ph = $("placeholder"), urlInput = $("url");
 
-try { const saved = localStorage.getItem("bob-cam"); if (saved) urlInput.value = saved; } catch {}
+const feed = $("feed"), rtc = $("rtc"), badge = $("badge"), msg = $("msg"), ph = $("placeholder"), urlInput = $("url");
+const phTitle = $("phtitle"), phText = $("phtext");
+const hud = $("hud"), clockEl = $("clock"), elapsedEl = $("elapsed");
+const flipBtn = $("flip"), zoomInBtn = $("zoomin"), zoomOutBtn = $("zoomout");
+
+let active = null, mode = "internet", liveSince = null, lanOn = false, stopDemo = null, digitalZoom = false;
+let switchTimer, zoom = 0;
+
+const pad = (n) => String(n).padStart(2, "0");
+const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const write = (k, v) => { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch {} };
+
+const savedCam = read("bob-cam");
+if (savedCam) urlInput.value = savedCam;
 
 function setStatus(state, text, note) {
   badge.className = "badge " + state;
   badge.textContent = text;
   msg.textContent = note || "";
+}
+
+function idleText() {
+  return mode === "local"
+    ? "Enter the camera address below and press Connect, or try the demo."
+    : "Enter the passcode below and press Connect, or try the demo.";
+}
+
+function setPlaceholder(title, text) {
+  phTitle.textContent = title || "Bob's eyes are closed";
+  phText.textContent = text || idleText();
+}
+
+function tickHud() {
+  const now = new Date();
+  clockEl.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+  if (liveSince !== null) {
+    const s = Math.floor((Date.now() - liveSince) / 1000);
+    elapsedEl.textContent = pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
+  }
+}
+setInterval(tickHud, 1000);
+
+function endSwitch() {
+  clearTimeout(switchTimer);
+  feed.classList.remove("switching");
+  rtc.classList.remove("switching");
+  $("switchlabel").hidden = true;
+}
+
+function showSwitch(front, el) {
+  $("switchlabel").textContent = "Switching to " + (front ? "front" : "back") + " camera…";
+  $("switchlabel").hidden = false;
+  el.classList.add("switching");
+  clearTimeout(switchTimer);
+  switchTimer = setTimeout(endSwitch, 6000);
+}
+
+function goLive() {
+  ph.hidden = true;
+  if (liveSince === null) liveSince = Date.now();
+  hud.hidden = false;
+  tickHud();
+  setStatus("live", "Live", "Connected.");
+  endSwitch();
+}
+
+function goDark(state, text, note) {
+  feed.hidden = true;
+  rtc.hidden = true;
+  ph.hidden = false;
+  setPlaceholder();
+  liveSince = null;
+  hud.hidden = true;
+  elapsedEl.textContent = "00:00:00";
+  zoomEnabled(true);
+  digitalZoom = false;
+  zoom = 0;
+  rtc.style.transform = "";
+  endSwitch();
+  setStatus(state || "off", text || "Offline", note || "");
+}
+
+function endActive() {
+  if (active === "demo" && stopDemo) { stopDemo(); stopDemo = null; }
+  lanOn = false;
+  feed.removeAttribute("src");
+  if (typeof Live !== "undefined") Live.stopViewer();
+  active = null;
+  goDark();
+}
+
+function claim(kind) {
+  endActive();
+  active = kind;
+}
+
+function sendCmd(m) {
+  return typeof Live !== "undefined" && Live.send(m);
 }
 
 function phoneBase() {
@@ -27,90 +118,119 @@ function streamUrl() {
   return url + (url.includes("?") ? "&" : "?") + "t=" + Date.now();
 }
 
-$("connect").addEventListener("click", () => {
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll("[data-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === m)));
+  $("pane-internet").hidden = m !== "internet";
+  $("pane-local").hidden = m !== "local";
+  if (!active) setPlaceholder();
+}
+
+document.querySelectorAll("[data-mode]").forEach((b) => {
+  b.addEventListener("click", () => {
+    if (b.dataset.mode === mode) return;
+    if (active === "lan" || active === "rtc") endActive();
+    setMode(b.dataset.mode);
+    write("bob-mode", b.dataset.mode);
+  });
+});
+setMode(read("bob-mode") === "local" ? "local" : "internet");
+
+$("connectlan").addEventListener("click", () => {
   const url = urlInput.value.trim();
   if (!url) return setStatus("err", "Error", "Enter the stream address first.");
   if (location.protocol === "https:" && url.startsWith("http:")) {
-    return setStatus("err", "Blocked", "This page is on https, so the browser blocks an http camera. Open the page from your computer (file) or http instead.");
+    return setStatus("err", "Blocked", "This page is on https, so the browser blocks an http camera. Use Internet mode, or open this page over http (for example from localhost) to use Local network mode.");
   }
-  try { localStorage.setItem("bob-cam", url); } catch {}
-  liveSince = null;
+  claim("lan");
+  lanOn = true;
+  zoom = 0;
+  write("bob-cam", url);
   setStatus("off", "Connecting…", "Connecting. Your device must be on the same WiFi as the phone.");
   feed.src = streamUrl();
-  feed.hidden = false; ph.hidden = true;
+  feed.hidden = false;
+  ph.hidden = true;
 });
-urlInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $("connect").click(); });
-const hud = $("hud"), clockEl = $("clock"), elapsedEl = $("elapsed");
-let liveSince = null;
-const pad = (n) => String(n).padStart(2, "0");
-function tickHud() {
-  const now = new Date();
-  clockEl.textContent = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
-  if (liveSince !== null) {
-    const s = Math.floor((Date.now() - liveSince) / 1000);
-    elapsedEl.textContent = pad(Math.floor(s / 3600)) + ":" + pad(Math.floor(s / 60) % 60) + ":" + pad(s % 60);
-  }
-}
-setInterval(tickHud, 1000);
+urlInput.addEventListener("keydown", (e) => { if (e.key === "Enter") $("connectlan").click(); });
 
 feed.addEventListener("load", () => {
-  setStatus("live", "Live", "Connected.");
-  endSwitch();
-  if (liveSince === null) liveSince = Date.now();
-  hud.hidden = false;
-  tickHud();
+  if (lanOn) goLive();
 });
 feed.addEventListener("error", () => {
-  feed.hidden = true; ph.hidden = false;
-  liveSince = null; hud.hidden = true; elapsedEl.textContent = "00:00:00";
-  setStatus("err", "No signal", "Can't reach the camera. Check the address and that you're on the same WiFi.");
+  if (!lanOn) return;
+  lanOn = false;
+  active = null;
+  goDark("err", "No signal", "Can't reach the camera. Check the address and that you're on the same WiFi.");
 });
 
-let switchTimer;
-function endSwitch() {
-  clearTimeout(switchTimer);
-  feed.classList.remove("switching");
-  $("switchlabel").hidden = true;
+function paintFlip(front) {
+  flipBtn.setAttribute("aria-pressed", String(front));
+  flipBtn.textContent = "Camera: " + (front ? "front" : "back");
 }
-$("flip").addEventListener("click", () => {
-  const b = $("flip"), front = b.getAttribute("aria-pressed") !== "true";
-  b.setAttribute("aria-pressed", front);
-  b.textContent = "Camera: " + (front ? "front" : "back");
+
+function zoomEnabled(on) {
+  zoomInBtn.disabled = !on;
+  zoomOutBtn.disabled = !on;
+}
+
+function setCaps(c) {
+  paintFlip(!!c.front);
+  digitalZoom = !c.zoom;
+  zoomEnabled(true);
+  if (c.flipped) { zoom = 0; rtc.style.transform = ""; endSwitch(); }
+  if (digitalZoom) msg.textContent = "This phone has no optical zoom, so zoom is digital.";
+}
+
+flipBtn.addEventListener("click", () => {
+  if (active !== "lan" && active !== "rtc") { msg.textContent = "Connect to Bob's camera first."; return; }
+  const front = flipBtn.getAttribute("aria-pressed") !== "true";
+  if (active === "rtc") {
+    if (!sendCmd({ t: "flip", front })) { msg.textContent = "Bob's camera isn't online."; return; }
+    showSwitch(front, rtc);
+    return;
+  }
+  paintFlip(front);
   phone("/settings/ffc?set=" + (front ? "on" : "off"));
-  if (feed.hidden) return;
-  $("switchlabel").textContent = "Switching to " + (front ? "front" : "back") + " camera…";
-  $("switchlabel").hidden = false;
-  feed.classList.add("switching");
-  setTimeout(() => { feed.src = streamUrl(); }, 900);
-  switchTimer = setTimeout(endSwitch, 6000);
+  showSwitch(front, feed);
+  setTimeout(() => { if (lanOn) feed.src = streamUrl(); }, 900);
 });
 
-let zoom = 0;
 function setZoom(z) {
+  if (active !== "lan" && active !== "rtc") { msg.textContent = "Connect to Bob's camera first."; return; }
   zoom = Math.max(0, Math.min(100, z));
   msg.textContent = "Zoom " + zoom + "%";
-  phone("/ptz?zoom=" + zoom);
+  if (active === "rtc") {
+    if (digitalZoom) rtc.style.transform = zoom ? "scale(" + (1 + zoom / 50) + ")" : "";
+    else if (!sendCmd({ t: "zoom", v: zoom })) msg.textContent = "Bob's camera isn't online.";
+  } else {
+    phone("/ptz?zoom=" + zoom);
+  }
 }
-$("zoomin").addEventListener("click", () => setZoom(zoom + 20));
-$("zoomout").addEventListener("click", () => setZoom(zoom - 20));
+zoomInBtn.addEventListener("click", () => setZoom(zoom + 20));
+zoomOutBtn.addEventListener("click", () => setZoom(zoom - 20));
 
 $("snap").addEventListener("click", () => {
-  if (feed.hidden || !feed.naturalWidth) { msg.textContent = "Connect the camera first."; return; }
+  let src = null, w = 0, h = 0;
+  if (!rtc.hidden && rtc.videoWidth) { src = rtc; w = rtc.videoWidth; h = rtc.videoHeight; }
+  else if (!feed.hidden && feed.naturalWidth) { src = feed; w = feed.naturalWidth; h = feed.naturalHeight; }
+  if (!src) { msg.textContent = "Connect the camera first."; return; }
   try {
     const c = document.createElement("canvas");
-    c.width = feed.naturalWidth; c.height = feed.naturalHeight;
-    c.getContext("2d").drawImage(feed, 0, 0);
+    c.width = w; c.height = h;
+    c.getContext("2d").drawImage(src, 0, 0);
     c.toBlob((blob) => {
+      if (!blob) { msg.textContent = "Couldn't save the snapshot."; return; }
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       a.download = "rescue-" + new Date().toISOString().replace(/[:.]/g, "-") + ".jpg";
       a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
       msg.textContent = "Snapshot saved.";
     }, "image/jpeg", 0.92);
   } catch {
     const base = phoneBase();
-    if (base) window.open(base + "/photo.jpg", "_blank");
-    else msg.textContent = "Enter the camera address first.";
+    if (src === feed && base) window.open(base + "/photo.jpg", "_blank");
+    else msg.textContent = "Couldn't save the snapshot.";
   }
 });
 
@@ -138,10 +258,7 @@ $("full").addEventListener("click", () => {
     if (mx !== null) {
       const dx = mx - cx, dy = my - cy;
       const d = Math.hypot(dx, dy) || 1;
-      const reach = Math.min(d / (r.width * 1.5), 1);
-      const ux = dx / d, uy = dy / d;
-      tpx = 0;
-      thx = ux; thy = uy;
+      thx = dx / d; thy = dy / d;
     }
     const k = calm ? 1 : 0.18;
     px += (tpx - px) * k; py += (tpy - py) * k;
@@ -205,7 +322,7 @@ $("full").addEventListener("click", () => {
   const RUBBLE = [[200, 300, 26], [300, 160, 32], [460, 330, 22], [150, 150, 20], [540, 200, 28], [380, 420, 18]];
 
   let on = false, raf = 0, frame = 0;
-  let bob, target, onArrive, ents, keys, trail, battery, announced, path = [];
+  let bob, target, onArrive, ents, keys, trail, battery, path = [];
 
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const stamp = () => { const d = new Date(); return pad(d.getMinutes()) + ":" + pad(d.getSeconds()); };
@@ -299,7 +416,7 @@ $("full").addEventListener("click", () => {
   function reset() {
     bob = { x: BASE.x, y: BASE.y, a: -0.8 };
     target = onArrive = null; path = [];
-    ents = []; keys = {}; trail = []; battery = 100; announced = {};
+    ents = []; keys = {}; trail = []; battery = 100;
     logEl.innerHTML = "";
     log("Bob online at base. Awaiting orders.");
   }
@@ -478,18 +595,19 @@ $("full").addEventListener("click", () => {
   }
 
   function start() {
+    claim("demo");
+    stopDemo = stop;
     on = true; reset();
     btn.setAttribute("aria-pressed", true); btn.textContent = "Demo view: on";
-    feed.hidden = true; ph.hidden = true; cv.hidden = false; panel.hidden = false;
+    feed.hidden = true; rtc.hidden = true; ph.hidden = true; cv.hidden = false; panel.hidden = false;
     setStatus("demo", "Demo", "Simulated mission. Bob isn't connected. Drive with the arrow keys.");
     loop(); cv.focus({ preventScroll: true });
   }
 
   btn.addEventListener("click", () => {
-    if (on) { stop(); if (feed.hidden) ph.hidden = false; setStatus("off", "Offline", ""); }
+    if (on) endActive();
     else start();
   });
-  $("connect").addEventListener("click", () => { if (on) stop(); });
 
   panel.addEventListener("click", (e) => {
     const c = e.target.closest("[data-cmd]");

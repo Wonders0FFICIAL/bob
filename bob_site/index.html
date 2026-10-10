@@ -6,9 +6,20 @@
 <title>BOB – The rescue robot</title>
 <meta name="description" content="BOB is a rescue robot that crawls into places too dangerous or too tight for people and streams live video back to the rescue team.">
 <meta name="theme-color" content="#EDF1F3">
+<link rel="canonical" href="https://bob.jrofficial.org/">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="BOB">
+<meta property="og:url" content="https://bob.jrofficial.org/">
 <meta property="og:title" content="BOB – The rescue robot">
 <meta property="og:description" content="The rescue robot that goes in first.">
+<meta property="og:image" content="https://bob.jrofficial.org/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="BOB, the rescue robot that goes in first">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BOB – The rescue robot">
+<meta name="twitter:description" content="The rescue robot that goes in first.">
+<meta name="twitter:image" content="https://bob.jrofficial.org/og-image.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -51,22 +62,41 @@
     <div class="room-in">
       <div class="screen-wrap">
         <div class="screen">
+          <video id="rtc" autoplay playsinline muted aria-label="Live camera feed from Bob" hidden></video>
           <img id="feed" alt="Live camera feed from Bob" hidden>
           <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob." hidden></canvas>
           <div id="placeholder" class="placeholder">
-            <p><strong>Bob's eyes are closed</strong></p>
-            <p>Enter the camera address below and press Connect, or try the demo.</p>
+            <p><strong id="phtitle">Bob's eyes are closed</strong></p>
+            <p id="phtext">Enter the passcode below and press Connect, or try the demo.</p>
           </div>
           <span id="badge" class="badge off">Offline</span>
           <div id="hud" class="hud" aria-hidden="true" hidden><i></i><span id="clock">00:00:00</span><span class="sep">|</span><span id="elapsed">00:00:00</span></div>
           <div id="switchlabel" class="switchlabel" hidden>Switching camera…</div>
         </div>
+
         <div class="bar">
-          <label for="url">Camera address</label>
-          <div class="row">
-            <input id="url" type="text" value="http://192.168.43.1:8080/video" spellcheck="false" autocomplete="off" autocapitalize="off">
-            <button id="connect">Connect</button>
+          <div class="modes" role="group" aria-label="Connection type">
+            <button type="button" data-mode="internet" aria-pressed="true">Internet</button>
+            <button type="button" data-mode="local" aria-pressed="false">Local network</button>
           </div>
+
+          <div id="pane-internet">
+            <label for="code">Passcode</label>
+            <div class="row">
+              <input id="code" type="password" spellcheck="false" autocomplete="off" autocapitalize="off">
+              <button id="connect" type="button">Connect</button>
+            </div>
+            <label class="check"><input id="rememberview" type="checkbox"> Remember on this device</label>
+          </div>
+
+          <div id="pane-local" hidden>
+            <label for="url">Camera address</label>
+            <div class="row">
+              <input id="url" type="text" value="http://192.168.43.1:8080/video" spellcheck="false" autocomplete="off" autocapitalize="off">
+              <button id="connectlan" type="button">Connect</button>
+            </div>
+          </div>
+
           <p id="msg" class="msg" role="status"></p>
         </div>
 
@@ -85,6 +115,24 @@
           </div>
           <ol id="demolog" class="demolog" aria-live="polite" aria-label="Mission log"></ol>
         </div>
+
+        <div id="campanel" class="cam" hidden>
+          <h3>Bob's camera</h3>
+          <p class="cam-hint">Open this page on the phone that rides on Bob. Keep it plugged in, keep this tab open, and don't lock the screen.</p>
+          <video id="campreview" autoplay playsinline muted></video>
+          <label for="camcode">Camera passcode</label>
+          <div class="row">
+            <input id="camcode" type="password" spellcheck="false" autocomplete="off" autocapitalize="off">
+            <button id="camstart" type="button">Start camera</button>
+          </div>
+          <label class="check"><input id="remembercam" type="checkbox"> Remember on this device and auto-start when opened as /#camera</label>
+          <p id="cammsg" class="msg" role="status"></p>
+          <p id="cambatt" class="msg"></p>
+          <div class="row">
+            <button id="camstop" type="button" disabled>Stop camera</button>
+            <button id="camclose" type="button">Close</button>
+          </div>
+        </div>
       </div>
 
       <div class="tools" id="tools">
@@ -96,6 +144,7 @@
         <button id="demobtn" aria-pressed="false">Demo view</button>
         <button id="snap">Save snapshot</button>
         <button id="full">Full screen</button>
+        <button id="camopen" class="ghost" type="button">Use this device as Bob's camera</button>
         <p class="note">Camera switch and zoom act on Bob's phone.</p>
       </div>
     </div>
@@ -127,8 +176,8 @@
     <h2>Inside Bob</h2>
     <ol class="flow">
       <li><strong>Body</strong>A FlySky controller along with motors carry BOB forward.</li>
-      <li><strong>Eyes</strong>An Android phone running IP Webcam.</li>
-      <li><strong>Link</strong>WiFi ties the phone to this page.</li>
+      <li><strong>Eyes</strong>An Android phone streaming its camera from the browser.</li>
+      <li><strong>Link</strong>Mobile data or WiFi carries the video to this page over HTTPS.</li>
       <li><strong>Control room</strong>This page shows the view and sends commands.</li>
     </ol>
     <div class="table-wrap">
@@ -139,7 +188,7 @@
         <tbody>
           <tr><td>FlySky Controller</td><td>Main controller</td></tr>
           <tr><td>Motor driver + DC motors</td><td>Movement</td></tr>
-          <tr><td>Android phone + IP Webcam</td><td>Camera feed, zoom, camera switch</td></tr>
+          <tr><td>Android phone</td><td>Camera feed, zoom, camera switch</td></tr>
         </tbody>
       </table>
     </div>
@@ -156,6 +205,8 @@
 </main>
 
 <footer><p>Built with passion</p></footer>
-<script src="script.js"></script>
+<script src="vendor/livekit-client.umd.js" defer></script>
+<script src="script.js" defer></script>
+<script src="live.js" defer></script>
 </body>
 </html>
