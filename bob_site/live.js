@@ -44,6 +44,11 @@
     return true;
   };
 
+  const why = (e) => {
+    const m = String((e && (e.message || e.name)) || e || "unknown error").replace(/\s+/g, " ").trim();
+    return m.length > 140 ? m.slice(0, 140) + "…" : m;
+  };
+
   const parse = (payload, topic, from, wantId) => {
     if (topic !== TOPIC || !from) return null;
     if (wantId && from.identity !== wantId) return null;
@@ -144,10 +149,11 @@
 
     try {
       await room.connect(creds.url, creds.token);
-    } catch {
+    } catch (e) {
+      console.error("viewer connect failed", e);
       if (viewerRoom === room) viewerRoom = null;
       try { room.disconnect(); } catch {}
-      if (wantViewer) viewerRetry("Couldn't join the video channel. Retrying…");
+      if (wantViewer) viewerRetry("Couldn't join the video channel (" + why(e) + "). Retrying…");
       return;
     }
     if (!wantViewer || viewerRoom !== room) { try { room.disconnect(); } catch {} return; }
@@ -315,20 +321,25 @@
       camRetry("Connection lost. Reconnecting…");
     });
 
-    let pub;
+    let pub, stage = "server";
     try {
       await room.connect(creds.url, creds.token);
       if (!wantCam || camRoom !== room) { try { room.disconnect(); } catch {} return; }
+      stage = "camera";
       pub = await room.localParticipant.setCameraEnabled(true, { facingMode: camFront ? "user" : "environment", resolution: preset() });
     } catch (e) {
+      console.error("camera start failed at " + stage, e);
       if (camRoom === room) camRoom = null;
       try { room.disconnect(); } catch {}
       if (!wantCam) return;
       const n = e && e.name;
-      if (n === "NotAllowedError" || n === "SecurityError") return stopCam("Camera permission was blocked. Allow it in the browser's site settings, then try again.");
-      if (n === "NotFoundError" || n === "OverconstrainedError") return stopCam("No camera was found on this device.");
-      if (n === "NotReadableError") return stopCam("The camera is busy. Close other apps using it, then try again.");
-      return camRetry("Couldn't start. Retrying…");
+      if (stage === "camera") {
+        if (n === "NotAllowedError" || n === "SecurityError") return stopCam("Camera permission was blocked. Allow it in the browser's site settings, then try again.");
+        if (n === "NotFoundError" || n === "OverconstrainedError") return stopCam("No camera was found on this device.");
+        if (n === "NotReadableError" || n === "AbortError") return stopCam("The camera didn't start. Close other apps or tabs using it, then try again.");
+        return camRetry("The camera failed to start (" + why(e) + "). Retrying…");
+      }
+      return camRetry("Couldn't join the video server (" + why(e) + "). Retrying…");
     }
     if (!wantCam || camRoom !== room) { try { room.disconnect(); } catch {} return; }
 
