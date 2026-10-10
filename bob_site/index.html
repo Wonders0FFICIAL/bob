@@ -38,6 +38,7 @@
   <a class="logo" href="#top">Bob</a>
   <nav>
     <a href="#live">Control room</a>
+    <a href="#guide">Guide</a>
     <a href="#about">Meet Bob</a>
     <a href="#watch" id="watchnav" hidden>Watch Bob</a>
     <a href="#inside">Inside Bob</a>
@@ -118,7 +119,7 @@
 
         <div id="campanel" class="cam" hidden>
           <h3>Bob's camera</h3>
-          <p class="cam-hint">Open this page on the phone that rides on Bob. Keep it plugged in, keep this tab open, and don't lock the screen.</p>
+          <p class="cam-hint">Open this page on the phone that rides on Bob. Start with a full battery, keep this tab open, and don't lock the screen.</p>
           <video id="campreview" autoplay playsinline muted></video>
           <label for="camcode">Camera passcode</label>
           <div class="row">
@@ -148,6 +149,84 @@
         <p class="note">Camera switch and zoom act on Bob's phone.</p>
       </div>
     </div>
+  </section>
+
+  <section id="guide" class="block">
+    <h2>How to use Bob</h2>
+    <p class="lead">You need two devices: a phone that rides on Bob, and a laptop or PC for the control room. Both need internet. Ask your team lead for the two passcodes.</p>
+
+    <div class="guide">
+      <article class="gcol">
+        <p class="gtag">Device 1 · The phone on Bob</p>
+        <h3>Start the camera</h3>
+        <ol class="steps">
+          <li><strong>Open Chrome</strong> on the Android phone.</li>
+          <li><strong>Go to the camera page.</strong> Scan the code below, or type <code>bob.jrofficial.org/#camera</code>.</li>
+          <li><strong>Enter the camera passcode</strong> and press <b>Start camera</b>.</li>
+          <li><strong>Tap Allow</strong> when Chrome asks to use the camera.</li>
+          <li><strong>Wait for the message</strong> "Streaming to the control room." Then mount the phone on Bob. The page keeps the screen awake, so leave the phone alone.</li>
+        </ol>
+        <div class="qr">
+          <img src="qr-camera.svg" width="148" height="148" alt="QR code that opens bob.jrofficial.org/#camera">
+          <div class="qr-text">
+            <p>Scan with the phone's camera to open the camera page.</p>
+            <button id="copycam" type="button" class="small">Copy link</button>
+            <a class="here" href="#camera">Using this phone now? Open the camera panel</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="gcol">
+        <p class="gtag">Device 2 · The control-room laptop</p>
+        <h3>Watch and control</h3>
+        <ol class="steps">
+          <li><strong>Open the site</strong> <code>bob.jrofficial.org</code> in any browser.</li>
+          <li><strong>Go to the Control room</strong> with the button at the top of the page.</li>
+          <li><strong>Enter the viewer passcode</strong> and press <b>Connect</b>.</li>
+          <li><strong>Wait for the green Live badge.</strong> If it says "Waiting for Bob's camera", start the phone first (Device 1).</li>
+          <li><strong>Use the buttons on the right:</strong> flip the camera, zoom, save a snapshot, or go full screen.</li>
+        </ol>
+        <a class="go small" href="#live">Open the control room</a>
+      </article>
+    </div>
+
+    <div class="tips">
+      <h3>Good to know</h3>
+      <ul>
+        <li>Use <b>Chrome on Android</b> for the phone. Other browsers and iPhones may not support everything.</li>
+        <li>Start with a <b>fully charged phone</b>. A power bank on the robot helps if you can fit one. Turn off battery saver and lower the screen brightness to save power.</li>
+        <li>The page keeps the screen awake by itself, but <b>don't lock the phone or switch to another app</b>. Chrome pauses the camera when the page is hidden.</li>
+        <li>Tick <b>Remember on this device</b> on devices you own, so they reconnect by themselves next time. Don't tick it on shared computers.</li>
+        <li>Several people can watch at the same time. Just open the site on each device and connect.</li>
+        <li>Close the tabs when you're finished. Streaming time is limited each month.</li>
+      </ul>
+    </div>
+
+    <details class="fix">
+      <summary>Something isn't working?</summary>
+      <dl>
+        <dt>"Wrong passcode"</dt>
+        <dd>The phone needs the camera passcode. The laptop needs the viewer passcode. They are different.</dd>
+        <dt>"Waiting for Bob's camera"</dt>
+        <dd>The laptop is connected, but the phone hasn't started streaming. Do Device 1.</dd>
+        <dt>Chrome never asks for the camera, or says it's blocked</dt>
+        <dd>Tap the lock icon in the address bar, choose Permissions, set Camera to Allow, then reload the page.</dd>
+        <dt>The picture is black or frozen</dt>
+        <dd>On the phone, close the tab, reopen the camera page, and press Start camera again.</dd>
+        <dt>"Server is not configured yet"</dt>
+        <dd>A website setting is missing. Tell the team member who manages the site.</dd>
+      </dl>
+    </details>
+
+    <details class="fix">
+      <summary>No internet at the scene? Use Local network mode</summary>
+      <ol class="plain">
+        <li>On the phone, open the IP Webcam app and press <b>Start server</b>. Note the address it shows.</li>
+        <li>Connect the laptop to the same WiFi (for example the phone's hotspot).</li>
+        <li>Open this site from the team's local copy, not the https address, because browsers block http cameras on https pages.</li>
+        <li>In the Control room, choose <b>Local network</b>, paste the phone's address, and press Connect.</li>
+      </ol>
+    </details>
   </section>
 
   <section id="about" class="block">

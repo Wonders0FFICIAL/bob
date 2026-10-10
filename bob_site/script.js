@@ -303,6 +303,18 @@ $("full").addEventListener("click", () => {
 })();
 
 (function () {
+  const btn = $("copycam");
+  if (!btn) return;
+  const url = "https://bob.jrofficial.org/#camera";
+  btn.addEventListener("click", async () => {
+    let ok = false;
+    try { await navigator.clipboard.writeText(url); ok = true; } catch {}
+    btn.textContent = ok ? "Copied" : "Copy failed";
+    setTimeout(() => { btn.textContent = "Copy link"; }, 1800);
+  });
+})();
+
+(function () {
   const section = $("watch"), nav = $("watchnav"), frame = $("yt"), out = $("ytlink");
   const raw = BOB_VIDEO.trim();
   const m = raw.match(/(?:shorts\/|youtu\.be\/|v=|embed\/)([\w-]{11})/) || raw.match(/^([\w-]{11})$/);
