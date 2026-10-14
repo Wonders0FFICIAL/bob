@@ -9,6 +9,11 @@
   const camMsg = $("cammsg"), camBatt = $("cambatt"), camStart = $("camstart"), camStop = $("camstop");
   const rememberCam = $("remembercam");
 
+  function chanNote(t) {
+    const c = window.Live && window.Live.channel;
+    return c ? t.replace(/\.$/, "") + " (" + c + ")." : t;
+  }
+
   async function getToken(role, code) {
     let r;
     try {
@@ -93,6 +98,7 @@
     let creds;
     try {
       creds = await getToken("viewer", viewerCode);
+      window.Live.channel = creds.channel || "";
     } catch (e) {
       if (!wantViewer) return;
       if (e.status === 401) {
@@ -137,7 +143,7 @@
     });
     room.on(LK.RoomEvent.Reconnected, () => {
       if (viewerRoom !== room) return;
-      if (!rtc.hidden && rtc.videoWidth) setStatus("live", "Live", "Connected.");
+      if (!rtc.hidden && rtc.videoWidth) setStatus("live", "Live", chanNote("Connected."));
       else if (!cameraOnline(room)) waiting();
     });
     room.on(LK.RoomEvent.Disconnected, () => {
@@ -288,6 +294,7 @@
     let creds;
     try {
       creds = await getToken("camera", camSecret);
+      window.Live.channel = creds.channel || "";
     } catch (e) {
       if (!wantCam) return;
       if (e.status === 401) {
@@ -311,7 +318,7 @@
       else if (m.t === "zoom") doZoom(m.v);
     });
     room.on(LK.RoomEvent.Reconnecting, () => { if (camRoom === room) camSay("Connection dropped. Retrying…", true); });
-    room.on(LK.RoomEvent.Reconnected, () => { if (camRoom === room) { camSay("Streaming to the control room."); sendCaps(false); } });
+    room.on(LK.RoomEvent.Reconnected, () => { if (camRoom === room) { camSay(chanNote("Streaming to the control room.")); sendCaps(false); } });
     room.on(LK.RoomEvent.Disconnected, (reason) => {
       if (camRoom !== room) return;
       if (!wantCam) return;
@@ -351,7 +358,7 @@
 
     lockScreen();
     watchBattery();
-    camSay("Streaming to the control room.");
+    camSay(chanNote("Streaming to the control room."));
     sendCaps(false);
   }
 
@@ -393,6 +400,7 @@
   });
 
   window.Live = {
+    channel: "",
     send(m) {
       if (!viewerRoom || !cameraOnline(viewerRoom)) return false;
       return send(viewerRoom, m, CAMERA_ID);

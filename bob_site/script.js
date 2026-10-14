@@ -63,7 +63,7 @@ function goLive() {
   if (liveSince === null) liveSince = Date.now();
   hud.hidden = false;
   tickHud();
-  setStatus("live", "Live", "Connected.");
+  setStatus("live", "Live", window.Live && window.Live.channel && active === "rtc" ? "Connected (" + window.Live.channel + ")." : "Connected.");
   endSwitch();
 }
 
