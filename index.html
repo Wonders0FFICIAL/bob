@@ -24,7 +24,7 @@
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="site.webmanifest">
-<script>try{var s=localStorage.getItem("bob-theme"),d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=d?"dark":"light";document.querySelector('meta[name="theme-color"]').content=d?"#0A141B":"#EDF1F3"}catch(e){}</script>
+<script src="theme-init.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@800;900&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -285,7 +285,6 @@
 
 <footer><p>Built with passion</p></footer>
 <script src="vendor/livekit-client.umd.js" defer></script>
-<script src="script.js" defer></script>
-<script src="live.js" defer></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>

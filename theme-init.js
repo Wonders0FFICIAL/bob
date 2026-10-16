@@ -1,0 +1,1 @@
+try{var s=localStorage.getItem("bob-theme"),d=s?s==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=d?"dark":"light";document.querySelector('meta[name="theme-color"]').content=d?"#0A141B":"#EDF1F3"}catch(e){}
