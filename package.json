@@ -1,0 +1,20 @@
+{
+  "name": "bob-rescue-robot",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Control room for Bob, the rescue robot",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node tools/check.js",
+    "verify": "node tools/check.js && node --test",
+    "channels": "node tools/make-channels.js",
+    "dev": "node tools/dev-server.js",
+    "e2e": "node tests/e2e/smoke.mjs"
+  },
+  "dependencies": {
+    "livekit-server-sdk": "^2.19.1"
+  }
+}
