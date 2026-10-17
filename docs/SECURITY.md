@@ -33,14 +33,14 @@ There are no cookies and no login sessions. The only long-lived secret is the pa
 
 ## What the viewers and cameras can and cannot do
 
-- A **viewer** ticket cannot publish video. Viewers can send small command messages (switch camera, zoom) to the camera in their own channel. They cannot reach other channels because every channel is a separate LiveKit room.
+- A **viewer** ticket cannot publish video. Viewers can send small command messages (switch camera, zoom, quality) to the camera in their own channel. They cannot reach other channels because every channel is a separate LiveKit room.
 - A **camera** ticket can publish and receive. Two cameras cannot share a channel. The newer one wins.
 - Channel separation is tested: a viewer in one channel never receives video or commands from another.
 
 ## Risks that remain
 
 - **A passcode is shared by everyone who knows it.** There are no personal accounts, no audit log of who watched, and no way to revoke one person without changing the passcode and redeploying.
-- **Anyone who watches can control zoom and camera switching.** If you need view-only guests (for example judges), a separate view-only passcode would be a small follow-up.
+- **Anyone who watches can control zoom, camera switching and video quality.** If you need view-only guests (for example judges), a separate view-only passcode would be a small follow-up.
 - **A leaked camera passcode lets someone replace the robot's feed.** Keep camera passcodes more private than viewer passcodes.
 - **Media is encrypted in transit but not end to end.** LiveKit's servers handle the video.
 - **A remembered passcode can be read by anyone with access to that browser's developer tools.** Only tick Remember on devices that belong to you, never on shared computers. The alternative, storing nothing, would stop the mounted phone from restarting itself, which matters more for this use. A future option is a per-device credential issued by the server.

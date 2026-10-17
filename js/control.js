@@ -2,8 +2,9 @@ import { $, el } from "./dom.js";
 import { S, hooks } from "./state.js";
 import { store, KEYS } from "./storage.js";
 import { goDark, setStatus, setPlaceholder, showSwitch, paintFlip, goLive, endSwitch } from "./ui.js";
+import { nextLevel } from "./live/quality.js";
 
-const { feed, rtc, msg, ph, urlInput, flip, zoomIn, zoomOut } = el;
+const { feed, rtc, msg, ph, urlInput, flip, quality, zoomIn, zoomOut } = el;
 
 export function endActive() {
   if (S.active === "demo" && S.stopDemo) { S.stopDemo(); S.stopDemo = null; }
@@ -107,6 +108,14 @@ export function initControl() {
     phone("/settings/ffc?set=" + (front ? "on" : "off"));
     showSwitch(front, feed);
     setTimeout(() => { if (S.lanOn) feed.src = streamUrl(); }, 900);
+  });
+
+  quality.addEventListener("click", () => {
+    if (S.active === "lan") { msg.textContent = "In Local network mode, set the quality in the IP Webcam app."; return; }
+    if (S.active !== "rtc") { msg.textContent = "Connect to Bob's camera first."; return; }
+    const level = nextLevel(quality.dataset.level);
+    if (!hooks.sendCommand({ t: "quality", level })) { msg.textContent = "Bob's camera isn't online."; return; }
+    msg.textContent = "Asking Bob's phone for " + level + " quality…";
   });
 
   zoomIn.addEventListener("click", () => setZoom(S.zoom + 20));

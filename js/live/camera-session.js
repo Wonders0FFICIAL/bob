@@ -1,8 +1,9 @@
 import { parse, sendData, why, zoomRange, zoomValue } from "./protocol.js";
 import { retryDelay, STABLE_MS } from "./backoff.js";
+import { DEFAULT_LEVEL, isLevel, levelOf, settingsFor } from "./quality.js";
 
 export class CameraSession {
-  constructor({ LK, getToken, emit, timers, random }) {
+  constructor({ LK, getToken, emit, timers, random, quality }) {
     this.LK = LK;
     this.getToken = getToken;
     this.emit = emit;
@@ -13,15 +14,23 @@ export class CameraSession {
     this.secret = "";
     this.want = false;
     this.front = false;
+    this.quality = levelOf(quality || DEFAULT_LEVEL);
     this.timer = 0;
     this.attempt = 0;
     this.joinedAt = 0;
     this.run = 0;
   }
 
-  preset() {
-    const p = this.LK.VideoPresets && this.LK.VideoPresets.h720;
-    return p ? p.resolution : undefined;
+  captureOptions() {
+    return { facingMode: this.front ? "user" : "environment", ...settingsFor(this.LK, this.quality).capture };
+  }
+
+  publishOptions() {
+    return settingsFor(this.LK, this.quality).publish;
+  }
+
+  resolution() {
+    return settingsFor(this.LK, this.quality).capture.resolution;
   }
 
   start(code) {
@@ -64,13 +73,13 @@ export class CameraSession {
   }
 
   sendCaps(flipped) {
-    return sendData(this.room, { t: "caps", front: this.front, zoom: !!this.zoomRange(), flipped: !!flipped });
+    return sendData(this.room, { t: "caps", front: this.front, zoom: !!this.zoomRange(), flipped: !!flipped, quality: this.quality });
   }
 
   async flip(front) {
     if (!this.track) return;
     try {
-      await this.track.restartTrack({ facingMode: front ? "user" : "environment", resolution: this.preset() });
+      await this.track.restartTrack({ facingMode: front ? "user" : "environment", resolution: this.resolution() });
       this.front = front;
     } catch {
       sendData(this.room, { t: "err", m: "This phone couldn't switch cameras." });
@@ -84,6 +93,46 @@ export class CameraSession {
     try {
       await this.track.mediaStreamTrack.applyConstraints({ advanced: [{ zoom: zoomValue(r, v) }] });
     } catch {}
+  }
+
+  async setQuality(level) {
+    if (!isLevel(level)) return false;
+    if (level === this.quality) {
+      this.sendCaps(false);
+      return true;
+    }
+    const previous = this.quality;
+    this.quality = level;
+    this.emit("quality", { level });
+    const room = this.room;
+    if (!room || !this.track) return true;
+    const lp = room.localParticipant;
+    try {
+      await lp.setCameraEnabled(false);
+      const pub = await lp.setCameraEnabled(true, this.captureOptions(), this.publishOptions());
+      if (this.room !== room) return true;
+      this.track = pub && pub.track ? pub.track : null;
+      this.emit("republished", { track: this.track });
+      this.sendCaps(true);
+      return true;
+    } catch (e) {
+      if (this.room !== room) return false;
+      this.quality = previous;
+      this.emit("quality", { level: previous });
+      sendData(room, { t: "err", m: "This phone couldn't change the video quality." });
+      try {
+        const pub = await lp.setCameraEnabled(true, this.captureOptions(), this.publishOptions());
+        if (this.room === room) {
+          this.track = pub && pub.track ? pub.track : null;
+          this.emit("republished", { track: this.track });
+        }
+      } catch {
+        if (this.room === room) this.retry("The camera stopped while changing quality. Restarting…");
+        return false;
+      }
+      this.sendCaps(true);
+      return false;
+    }
   }
 
   async join() {
@@ -118,6 +167,7 @@ export class CameraSession {
       if (m.t === "hello") this.sendCaps(false);
       else if (m.t === "flip") this.flip(!!m.front);
       else if (m.t === "zoom") this.zoom(m.v);
+      else if (m.t === "quality") this.setQuality(m.level);
     });
     room.on(LK.RoomEvent.Reconnecting, () => { if (mine()) this.emit("say", { text: "Connection dropped. Retrying…", bad: true }); });
     room.on(LK.RoomEvent.Reconnected, () => {
@@ -140,7 +190,7 @@ export class CameraSession {
       await room.connect(creds.url, creds.token);
       if (!this.want || !mine()) { try { room.disconnect(); } catch {} return; }
       stage = "camera";
-      pub = await room.localParticipant.setCameraEnabled(true, { facingMode: this.front ? "user" : "environment", resolution: this.preset() });
+      pub = await room.localParticipant.setCameraEnabled(true, this.captureOptions(), this.publishOptions());
     } catch (e) {
       if (mine()) this.room = null;
       try { room.disconnect(); } catch {}

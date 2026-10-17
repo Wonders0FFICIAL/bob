@@ -2,6 +2,7 @@ import { $ } from "../dom.js";
 import { S } from "../state.js";
 import { store, KEYS, MAX_AGE } from "../storage.js";
 import { channelNote } from "../ui.js";
+import { LABELS, levelOf } from "./quality.js";
 import { getToken } from "./token.js";
 import { CameraSession } from "./camera-session.js";
 
@@ -10,6 +11,9 @@ export function initCamera() {
   const panel = $("campanel"), preview = $("campreview"), codeInput = $("camcode");
   const msg = $("cammsg"), batt = $("cambatt"), startBtn = $("camstart"), stopBtn = $("camstop");
   const remember = $("remembercam");
+  const qualitySelect = $("camquality");
+  const savedQuality = levelOf(store.read(KEYS.quality));
+  qualitySelect.value = savedQuality;
   let wake = null, battReady = false;
 
   const say = (text, bad) => {
@@ -50,12 +54,21 @@ export function initCamera() {
   const session = new CameraSession({
     LK: LK || {},
     getToken,
+    quality: savedQuality,
     emit(ev, p) {
       switch (ev) {
         case "channel": S.channel = p; break;
         case "say": say(p.text, p.bad); break;
         case "teardown": preview.srcObject = null; break;
         case "denied": store.forgetSecret(KEYS.camera); break;
+        case "quality":
+          qualitySelect.value = p.level;
+          store.write(KEYS.quality, p.level);
+          if (session.track) say("Video quality set to " + LABELS[p.level].toLowerCase() + ".");
+          break;
+        case "republished":
+          if (p.track) p.track.attach(preview);
+          break;
         case "stopped":
           releaseScreen();
           buttons(false);
@@ -96,6 +109,7 @@ export function initCamera() {
     session.stop("");
     panel.hidden = true;
   });
+  qualitySelect.addEventListener("change", () => session.setQuality(qualitySelect.value));
   startBtn.addEventListener("click", start);
   stopBtn.addEventListener("click", () => session.stop());
   codeInput.addEventListener("keydown", (e) => { if (e.key === "Enter" && !startBtn.disabled) start(); });

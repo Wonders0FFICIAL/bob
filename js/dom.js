@@ -13,6 +13,7 @@ export const el = {
   clock: $("clock"),
   elapsed: $("elapsed"),
   flip: $("flip"),
+  quality: $("quality"),
   zoomIn: $("zoomin"),
   zoomOut: $("zoomout"),
 };

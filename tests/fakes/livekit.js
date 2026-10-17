@@ -10,7 +10,11 @@ function createFakeLK() {
     Disconnected: "disconnected",
   };
   const DisconnectReason = { CLIENT_INITIATED: 1, DUPLICATE_IDENTITY: 2, SERVER_SHUTDOWN: 3 };
-  const VideoPresets = { h720: { resolution: { width: 1280, height: 720, frameRate: 30 } } };
+  const VideoPresets = {
+    h360: { resolution: { width: 640, height: 360, frameRate: 20 }, encoding: { maxBitrate: 450000, maxFramerate: 20 } },
+    h720: { resolution: { width: 1280, height: 720, frameRate: 30 }, encoding: { maxBitrate: 1700000, maxFramerate: 30 } },
+    h1080: { resolution: { width: 1920, height: 1080, frameRate: 30 }, encoding: { maxBitrate: 3000000, maxFramerate: 30 } },
+  };
 
   class Emitter {
     constructor() { this.handlers = {}; }
@@ -22,11 +26,13 @@ function createFakeLK() {
     rooms: new Map(),
     connectPlan: [],
     cameraPlan: [],
+    publishCalls: [],
     all: [],
     reset() {
       this.rooms.clear();
       this.connectPlan.length = 0;
       this.cameraPlan.length = 0;
+      this.publishCalls.length = 0;
       this.all.length = 0;
     },
     members(name) {
@@ -83,13 +89,22 @@ function createFakeLK() {
           }
           return Promise.resolve();
         },
-        async setCameraEnabled(on, o) {
+        async setCameraEnabled(on, o, publishOptions) {
+          const m = server.members(self.roomName);
+          server.publishCalls.push({ on, capture: o, publish: publishOptions });
+          if (!on) {
+            self.publishedTrack = null;
+            for (const other of m.values()) {
+              if (other !== self) other.emit(RoomEvent.TrackUnsubscribed, { kind: "video", attach() {}, detach() {} }, {}, { identity: self.identity });
+            }
+            return undefined;
+          }
           const plan = server.cameraPlan.length ? server.cameraPlan.shift() : {};
           if (plan.error) { const e = new Error(plan.error.message || plan.error.name); e.name = plan.error.name; throw e; }
           const track = fakeTrack(self, plan);
           self.publishedTrack = track;
           self.cameraOptions = o;
-          const m = server.members(self.roomName);
+          self.publishOptions = publishOptions;
           for (const other of m.values()) {
             if (other === self) continue;
             other.emit(RoomEvent.TrackSubscribed, { kind: "video", attach() {}, detach() {} }, {}, { identity: self.identity });

@@ -104,14 +104,14 @@ Rules the server enforces:
 
 **Phone on Bob** (Chrome on Android recommended):
 
-1. Open `https://your-address/#camera`.
+1. Open `https://bob.jrofficial.org/#camera`.
 2. Enter the channel's **phone** passcode, press **Start camera**, allow camera access.
 3. Tick **Remember** if the phone should restart by itself next time. Only do this on a device that belongs to the robot.
 4. Keep the tab open and in front, with the screen on. Charging is not required but helps on long runs.
 
 **PC in the control room:**
 
-1. Open `https://your-address`, go to the control room.
+1. Open `https://bob.jrofficial.org`, go to the control room.
 2. Enter the channel's **PC** passcode and press **Connect**.
 3. The picture appears within a few seconds, and the channel name is shown under the status.
 
@@ -171,6 +171,7 @@ The automated tests prove the logic. They cannot prove your phone's camera, your
 
 - [ ] Start the camera, connect the PC, confirm the picture and the channel name.
 - [ ] Press the camera switch button: front and back cameras change and the picture recovers.
+- [ ] Press Quality on the viewer: the phone briefly restarts its video and the picture gets sharper (High) or lighter (Low). Higher quality uses more battery and mobile data.
 - [ ] Press zoom: the picture zooms (optical on phones that support it, digital otherwise).
 - [ ] Turn on airplane mode on the phone for 20 seconds and turn it off: the PC shows waiting or reconnecting, then the picture returns by itself.
 - [ ] Turn off Wi-Fi on the PC for 20 seconds: the PC recovers by itself.

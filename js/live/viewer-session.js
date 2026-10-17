@@ -82,7 +82,7 @@ export class ViewerSession {
     this.emit("channel", creds.channel || "");
 
     const LK = this.LK;
-    const room = new LK.Room({ adaptiveStream: true, dynacast: true });
+    const room = new LK.Room({ adaptiveStream: { pixelDensity: "screen" }, dynacast: true });
     this.room = room;
     const mine = () => this.room === room;
 

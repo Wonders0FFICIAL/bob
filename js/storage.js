@@ -54,4 +54,5 @@ export const KEYS = {
   lan: "bob-cam",
   mode: "bob-mode",
   theme: "bob-theme",
+  quality: "bob-cam-quality",
 };
