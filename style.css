@@ -339,7 +339,8 @@ html[data-theme="dark"] .theme-btn .i-moon { display: none; }
 input[type=checkbox] { width: 18px; height: 18px; flex: none; accent-color: var(--yellow); }
 
 input[type=text],
-input[type=password] {
+input[type=password],
+select {
   flex: 1;
   min-width: 0;
   padding: 12px 14px;

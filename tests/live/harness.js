@@ -72,6 +72,7 @@ async function setup() {
     const events = [];
     const s = new CameraSession({
       LK,
+      quality: opts.quality,
       getToken: api.getToken,
       emit: (ev, p) => events.push([ev, p]),
       timers: clock,

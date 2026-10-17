@@ -14,6 +14,7 @@ js/
   control.js          modes, local network camera, flip, zoom, snapshot, fullscreen
   storage.js          localStorage wrapper and expiring saved passcodes
   live/
+    quality.js        Low/Standard/High presets mapped to capture size and bitrate
     protocol.js       message format, parsing, zoom maths (no browser needed)
     backoff.js        retry delays (no browser needed)
     token.js          calls /api/token and classifies the answer

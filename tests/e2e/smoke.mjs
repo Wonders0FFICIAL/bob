@@ -78,6 +78,10 @@ async function newPage(ctxOpts = {}) {
   await page.reload();
   check((await page.evaluate(() => document.documentElement.dataset.theme)) === after, "theme survives reload");
 
+  check((await page.textContent("#quality")) === "Quality: standard", "quality button starts at standard");
+  await page.click("#quality");
+  check(/Connect to Bob's camera first/.test(await page.textContent("#msg")), "quality button asks to connect first");
+
   await page.click("#demobtn");
   check((await page.textContent("#badge")) === "Demo", "demo mode starts");
   await page.click("#demobtn");
@@ -119,13 +123,26 @@ async function newPage(ctxOpts = {}) {
   check(true, "camera panel opens from #camera");
   await page.fill("#camcode", "cam-pine-3460");
   await page.check("#remembercam");
+  check((await page.inputValue("#camquality")) === "standard", "camera quality defaults to standard");
+  await page.selectOption("#camquality", "high");
+  check((await page.evaluate(() => localStorage.getItem("bob-cam-quality"))) === "high", "choosing quality before streaming is remembered at once");
   await page.click("#camstart");
   await page.waitForFunction(() => /Streaming/.test(document.querySelector("#cammsg").textContent), null, { timeout: 8000 });
   check(/Bob One/.test(await page.textContent("#cammsg")), "camera streams on its channel: " + (await page.textContent("#cammsg")));
   check((await page.evaluate(() => document.querySelector("#camstop").disabled)) === false, "stop button enabled while streaming");
+  const used = await page.evaluate(() => window.LivekitClient.server.publishCalls.at(-1));
+  check(used.capture.resolution.height === 1080 && used.publish.videoEncoding.maxBitrate === 3000000, "camera started at the chosen high quality");
+  await page.selectOption("#camquality", "low");
+  await page.waitForFunction(() => /quality set to low/i.test(document.querySelector("#cammsg").textContent));
+  check((await page.evaluate(() => localStorage.getItem("bob-cam-quality"))) === "low", "quality choice is remembered on the device");
+  const after = await page.evaluate(() => window.LivekitClient.server.publishCalls.slice(-2).map((c) => [c.on, c.capture && c.capture.resolution.height]));
+  check(JSON.stringify(after) === JSON.stringify([[false, undefined], [true, 360]]), "changing quality while streaming restarts the video at 360p " + JSON.stringify(after));
   await page.reload();
   await page.waitForFunction(() => /Streaming/.test(document.querySelector("#cammsg").textContent), null, { timeout: 8000 });
   check(true, "remembered camera restarts itself after reload");
+  check((await page.inputValue("#camquality")) === "low", "remembered quality is selected after reload");
+  const resumed = await page.evaluate(() => window.LivekitClient.server.publishCalls.at(-1));
+  check(resumed.capture.resolution.height === 360, "camera restarts at the remembered quality");
   await page.click("#camstop");
   check((await page.textContent("#cammsg")) === "Camera stopped.", "camera stops");
   check(problems.csp.length === 0, "no CSP violations on camera page " + problems.csp.join(" | "));

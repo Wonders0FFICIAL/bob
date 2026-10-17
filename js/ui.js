@@ -1,7 +1,8 @@
 import { $, el, pad } from "./dom.js";
 import { S } from "./state.js";
+import { LABELS, isLevel } from "./live/quality.js";
 
-const { feed, rtc, badge, msg, ph, phTitle, phText, hud, clock, elapsed, flip, zoomIn, zoomOut } = el;
+const { feed, rtc, badge, msg, ph, phTitle, phText, hud, clock, elapsed, flip, quality, zoomIn, zoomOut } = el;
 
 export function channelNote(text) {
   return S.channel ? text.replace(/\.$/, "") + " (" + S.channel + ")." : text;
@@ -48,6 +49,11 @@ export function showSwitch(front, target) {
   S.switchTimer = setTimeout(endSwitch, 6000);
 }
 
+export function paintQuality(level) {
+  quality.textContent = "Quality: " + (isLevel(level) ? LABELS[level].toLowerCase() : "standard");
+  quality.dataset.level = isLevel(level) ? level : "standard";
+}
+
 export function zoomEnabled(on) {
   zoomIn.disabled = !on;
   zoomOut.disabled = !on;
@@ -85,6 +91,7 @@ export function goDark(state, text, note) {
 
 export function setCaps(c) {
   paintFlip(!!c.front);
+  if (c.quality) paintQuality(c.quality);
   S.digitalZoom = !c.zoom;
   zoomEnabled(true);
   if (c.flipped) { S.zoom = 0; rtc.style.transform = ""; endSwitch(); }

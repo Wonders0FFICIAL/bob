@@ -171,6 +171,7 @@ The automated tests prove the logic. They cannot prove your phone's camera, your
 
 - [ ] Start the camera, connect the PC, confirm the picture and the channel name.
 - [ ] Press the camera switch button: front and back cameras change and the picture recovers.
+- [ ] Press Quality on the viewer: the phone briefly restarts its video and the picture gets sharper (High) or lighter (Low). Higher quality uses more battery and mobile data.
 - [ ] Press zoom: the picture zooms (optical on phones that support it, digital otherwise).
 - [ ] Turn on airplane mode on the phone for 20 seconds and turn it off: the PC shows waiting or reconnecting, then the picture returns by itself.
 - [ ] Turn off Wi-Fi on the PC for 20 seconds: the PC recovers by itself.

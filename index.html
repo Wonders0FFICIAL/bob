@@ -126,6 +126,12 @@
             <input id="camcode" type="password" spellcheck="false" autocomplete="off" autocapitalize="off">
             <button id="camstart" type="button">Start camera</button>
           </div>
+          <label for="camquality">Video quality</label>
+          <select id="camquality">
+            <option value="low">Low: 360p, saves data and battery</option>
+            <option value="standard" selected>Standard: 720p</option>
+            <option value="high">High: 1080p, uses more data and battery</option>
+          </select>
           <label class="check"><input id="remembercam" type="checkbox"> Remember on this device and auto-start when opened as /#camera</label>
           <p id="cammsg" class="msg" role="status"></p>
           <p id="cambatt" class="msg"></p>
@@ -138,6 +144,7 @@
 
       <div class="tools" id="tools">
         <button id="flip" aria-pressed="false">Camera: back</button>
+        <button id="quality" type="button" data-level="standard">Quality: standard</button>
         <div class="pair">
           <button id="zoomout">Zoom out</button>
           <button id="zoomin">Zoom in</button>
@@ -146,7 +153,7 @@
         <button id="snap">Save snapshot</button>
         <button id="full">Full screen</button>
         <button id="camopen" class="ghost" type="button">Use this device as Bob's camera</button>
-        <p class="note">Camera switch and zoom act on Bob's phone.</p>
+        <p class="note">Camera switch, zoom and quality act on Bob's phone.</p>
       </div>
     </div>
   </section>
