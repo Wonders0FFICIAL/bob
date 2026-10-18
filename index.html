@@ -240,7 +240,7 @@
     <h2>Meet Bob</h2>
     <p class="lead">When a building collapses or a tunnel fills with smoke, the first question is whether anyone is still inside. Bob finds out without risking a person to do it.</p>
     <ul class="list">
-      <li><h3>Sees where people can't</h3><p>A phone camera on Bob streams live video to this page.</p></li>
+      <li><h3>Sees where people can't</h3><p>A camera on Bob streams live video to this page.</p></li>
       <li><h3>Keeps evidence</h3><p>Save a snapshot of what Bob sees and share it with the team.</p></li>
     </ul>
   </section>
@@ -260,21 +260,67 @@
 
   <section id="inside" class="block alt">
     <h2>Inside Bob</h2>
+    <div class="bob3d" id="bob3d" data-state="idle">
+      <div class="bob3d-stage">
+        <img class="bob3d-poster" src="models/bob-v3-poster.webp" width="960" height="600" alt="Bob v3 concept model: a four-wheel-drive rover under a charcoal shell with orange fenders, a round camera eye and lights at the front and a drone hangar on the roof.">
+        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom."></canvas>
+        <p class="bob3d-msg" role="status">Loading 3D model…</p>
+        <button class="bob3d-load" type="button" hidden>Load 3D model</button>
+        <span class="bob3d-badge">Concept v3</span>
+        <div class="bob3d-tools" role="group" aria-label="View controls">
+          <button type="button" data-act="reset">Reset view</button>
+          <button type="button" data-act="doors" aria-pressed="false">Open hangar</button>
+          <button type="button" data-act="shell" aria-pressed="false">Hide shell</button>
+          <button type="button" data-act="lights" aria-pressed="false">Lights off</button>
+          <button type="button" data-act="zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" data-act="zoom-out" aria-label="Zoom out">&minus;</button>
+        </div>
+      </div>
+      <div class="bob3d-side">
+        <div class="bob3d-info" aria-live="polite">
+          <h3 class="bob3d-title">Bob v3</h3>
+          <p class="bob3d-text">Drag to turn Bob around, or pick a part to zoom in on it. This is a concept model, so sizes may change when the real parts arrive. Parts marked Design plan are not built yet.</p>
+        </div>
+        <div class="bob3d-parts" role="group" aria-label="Parts of Bob">
+          <button type="button" data-part="shell" aria-pressed="false">Protective shell</button>
+          <button type="button" data-part="eye" aria-pressed="false">Camera eye</button>
+          <button type="button" data-part="lights" aria-pressed="false">Lights and display</button>
+          <button type="button" data-part="hangar" aria-pressed="false">Drone hangar</button>
+          <button type="button" data-part="payload" aria-pressed="false">Payload bay</button>
+          <button type="button" data-part="chassis" aria-pressed="false">Chassis and electronics</button>
+          <button type="button" data-part="suspension" aria-pressed="false">Suspension</button>
+          <button type="button" data-part="wheels" aria-pressed="false">Wheels and drive</button>
+          <button type="button" data-part="tape" aria-pressed="false">Reflective tape</button>
+        </div>
+        <fieldset class="bob3d-colors">
+          <legend>Colour scheme</legend>
+          <label><input type="radio" name="bob3d-scheme" value="hybrid" checked> Charcoal and orange</label>
+          <label><input type="radio" name="bob3d-scheme" value="orange"> Safety orange</label>
+          <label><input type="radio" name="bob3d-scheme" value="charcoal"> Charcoal and tape</label>
+          <label><input type="radio" name="bob3d-scheme" value="red"> Rescue red</label>
+          <p class="bob3d-scheme-note">Dark shell hides soot, orange fenders and doors stand out, tape adds more.</p>
+        </fieldset>
+      </div>
+    </div>
     <ol class="flow">
-      <li><strong>Body</strong>A FlySky controller along with motors carry BOB forward.</li>
-      <li><strong>Eyes</strong>An Android phone streaming its camera from the browser.</li>
+      <li><strong>Body</strong>A FlySky controller and four driven wheels carry Bob forward under a protective shell.</li>
+      <li><strong>Eyes</strong>Today an Android phone streams its camera from the browser. Next, an ESP32-CAM in the shell.</li>
       <li><strong>Link</strong>Mobile data or WiFi carries the video to this page over HTTPS.</li>
       <li><strong>Control room</strong>This page shows the view and sends commands.</li>
     </ol>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th scope="col">Part</th><th scope="col">What it does for Bob</th></tr>
+          <tr><th scope="col">Part</th><th scope="col">What it does for Bob</th><th scope="col">Status</th></tr>
         </thead>
         <tbody>
-          <tr><td>FlySky Controller</td><td>Main controller</td></tr>
-          <tr><td>Motor driver + DC motors</td><td>Movement</td></tr>
-          <tr><td>Android phone</td><td>Camera feed, zoom, camera switch</td></tr>
+          <tr><td>FlySky Controller</td><td>Main controller</td><td>Built</td></tr>
+          <tr><td>Motor driver + DC motors</td><td>Movement</td><td>Built</td></tr>
+          <tr><td>Android phone</td><td>Camera feed, zoom, camera switch</td><td>Used in the demo</td></tr>
+          <tr><td>ESP32-CAM</td><td>Camera eye inside the shell, replaces the phone</td><td>Design plan</td></tr>
+          <tr><td>Outer shell</td><td>Covers the robot and has windows for the camera, lights and display</td><td>Design plan</td></tr>
+          <tr><td>Lights and 16x2 LCD</td><td>Headlights, tail lights, roof beacon and a status display</td><td>Design plan</td></tr>
+          <tr><td>Drone hangar and payload bay</td><td>Roof launch for a micro-drone and a trapdoor for supplies</td><td>Design plan</td></tr>
         </tbody>
       </table>
     </div>
@@ -282,10 +328,11 @@
 
   <section id="team" class="block">
     <h2>The team</h2>
+    <p class="lead">Three people building a robot that goes in first.</p>
     <ul class="team">
-      <li><strong>Izaan</strong><span>Engineer</span></li>
-      <li><strong>Prithvidev</strong><span>Designer</span></li>
-      <li><strong>Ryan</strong><span>Programmer</span></li>
+      <li><span class="avatar" aria-hidden="true">I</span><strong>Izaan</strong><span class="role">Engineer</span><p>Builds and wires Bob: chassis, motors, power and sensors.</p></li>
+      <li><span class="avatar" aria-hidden="true">P</span><strong>Prithvidev</strong><span class="role">Designer</span><p>Shapes how Bob looks and fits together, from the shell to the lights.</p></li>
+      <li><span class="avatar" aria-hidden="true">R</span><strong>Ryan</strong><span class="role">Programmer</span><p>Writes the code that drives Bob and the control room you are using.</p></li>
     </ul>
   </section>
 </main>

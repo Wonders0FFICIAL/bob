@@ -12,9 +12,14 @@
     "verify": "node tools/check.js && node --test",
     "channels": "node tools/make-channels.js",
     "dev": "node tools/dev-server.js",
-    "e2e": "node tests/e2e/smoke.mjs"
+    "e2e": "node tests/e2e/smoke.mjs",
+    "build:viewer": "node tools/build-viewer.js"
   },
   "dependencies": {
     "livekit-server-sdk": "^2.19.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "three": "^0.170.0"
   }
 }

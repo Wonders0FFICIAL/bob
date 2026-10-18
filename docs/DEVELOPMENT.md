@@ -22,7 +22,8 @@ js/
     camera-session.js the phone's connection logic (no browser needed)
     viewer.js         wires the viewer session to the page
     camera.js         wires the camera session to the page, wake lock, battery
-  features/           lens, theme, copy link, video embed, demo mission
+  features/           lens, theme, copy link, video embed, demo mission, 3D model panel
+  viewer/             bob-viewer.js, the built three.js bundle (do not edit by hand)
 api/
   token.js            the passcode server (Vercel serverless function)
   _lib/               channels, rate limiting, env and request helpers (the underscore keeps them from becoming URLs)
@@ -62,3 +63,13 @@ The tests use a fake LiveKit that models rooms, identities, data messages, publi
 2. Keep scripts external and styles in `style.css`, because the security policy blocks inline code.
 3. Run `npm run verify`.
 4. If you add an environment variable, mention it in `docs/DEPLOYMENT.md` (the check fails otherwise).
+
+## The 3D model of Bob
+
+The model is generated from code, so changing a size is a one-line edit.
+
+- `cad/bob_v3.py` builds Bob with [build123d](https://github.com/gumyr/build123d) (`pip install build123d`). Run `python3 cad/bob_v3.py` for the STEP and STL files (open hangar doors, for Onshape or a slicer) and `python3 cad/bob_v3.py --web` for `models/bob-v3.glb`, the closed-door model the website loads.
+- `tools/viewer-src/viewer.js` is the three.js scene. After editing it run `npm run build:viewer`, which writes `js/viewer/bob-viewer.js`. The site loads that file only when the "Inside Bob" section is near the screen, so visitors who never scroll there download nothing.
+- `js/features/model-data.js` lists which parts belong to which button, the text each button shows and the colour schemes. It has no browser code, so `tests/model-data.test.js` can check it against the real model file. Part names come from the model, so rename a part in `bob_v3.py` and the test tells you what to update.
+- `tools/make-poster.mjs` renders `models/bob-v3-poster.png`. Convert it to `models/bob-v3-poster.webp` (the picture shown while the model loads and when WebGL is missing).
+- three.js is bundled into the site, not loaded from a CDN, so the Content-Security-Policy stays strict. The smoke test loads the model under the real headers.

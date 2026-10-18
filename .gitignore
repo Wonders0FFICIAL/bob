@@ -1,3 +1,6 @@
 node_modules
 .env
 .vercel
+cad/*.step
+cad/*.stl
+cad/__pycache__/
