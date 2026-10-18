@@ -546,15 +546,86 @@ button:disabled { opacity: .4; cursor: not-allowed; }
   .bob3d-msg { bottom: 80px; }
 }
 
-.flow {
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 14px;
-  margin-bottom: 32px;
+.how { max-width: 1000px; margin: 0 auto 40px; }
+.how h3, .spec-title { margin-bottom: 14px; font-family: var(--display); font-size: 1.15rem; }
+.spec-title { margin-top: 44px; }
+.spec-title small { margin-left: 8px; color: var(--mute); font-size: .85rem; font-weight: 400; }
+.pipe { list-style: none; display: flex; align-items: stretch; gap: 0; }
+.pipe .node { flex: 1 1 0; padding: 18px; border-radius: 14px; background: var(--card); }
+.pipe .node strong { display: block; margin-bottom: 6px; font-family: var(--display); font-size: 1rem; }
+.pipe .node span { color: var(--mute); font-size: .95rem; }
+.pipe .hop { flex: 0 0 84px; display: grid; place-items: center; position: relative; color: var(--mute); font-size: .8rem; }
+.pipe .hop::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  border-top: 3px dashed var(--yellow);
 }
-.flow li { padding: 16px; border-radius: 14px; background: var(--card); }
-.flow strong { display: block; margin-bottom: 4px; font-family: var(--display); font-size: .95rem; }
+.pipe .hop::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  translate: 0 -50%;
+  border: 7px solid transparent;
+  border-left: 10px solid var(--yellow);
+  border-right: 0;
+}
+.pipe .hop span { position: relative; top: -14px; padding: 0 4px; background: var(--surface); }
+.pipe-note { margin-top: 14px; color: var(--mute); font-size: .95rem; }
+@media (max-width: 760px) {
+  .pipe { flex-direction: column; }
+  .pipe .hop { flex-basis: 56px; }
+  .pipe .hop::before { left: 50%; right: auto; top: 6px; bottom: 16px; border-top: 0; border-left: 3px dashed var(--yellow); }
+  .pipe .hop::after { left: 50%; right: auto; top: auto; bottom: 6px; translate: -50% 0; border: 7px solid transparent; border-top: 10px solid var(--yellow); border-bottom: 0; }
+  .pipe .hop span { top: 0; left: 28px; justify-self: start; }
+}
+
+.specs th { width: 38%; background: transparent; color: var(--text); text-align: left; font-weight: 600; }
+.specs td { text-align: left; }
+
+.why { max-width: 760px; margin-top: 48px; }
+.why h3 { margin-bottom: 14px; font-family: var(--display); font-size: 1.15rem; }
+.facts { list-style: none; display: grid; gap: 14px; }
+.facts li { display: grid; grid-template-columns: minmax(7rem, auto) minmax(0, 1fr); gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.facts strong { font-family: var(--display); font-size: 2.2rem; line-height: 1; }
+.facts a { color: var(--nav); }
+.why-note { margin-top: 16px; color: var(--mute); }
+@media (max-width: 560px) {
+  .facts li { grid-template-columns: 1fr; gap: 4px; }
+}
+
+.road { list-style: none; max-width: 760px; margin-top: 8px; border-left: 3px solid var(--line); }
+.road li { position: relative; padding: 0 0 26px 28px; }
+.road li::before {
+  content: "";
+  position: absolute;
+  left: -11px;
+  top: 4px;
+  width: 19px;
+  height: 19px;
+  border: 3px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+}
+.road li[data-status="done"]::before { border-color: var(--yellow); background: var(--yellow); }
+.road li[data-status="doing"]::before { border-color: var(--yellow); background: radial-gradient(circle, var(--yellow) 40%, var(--bg) 45%); }
+.road h3 { font-family: var(--display); font-size: 1.15rem; }
+.road p { margin-top: 2px; color: var(--mute); }
+.road .tag { display: inline-block; margin-bottom: 4px; color: var(--mute); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.road li[data-status="doing"] .tag { color: var(--text); }
+
+.mail {
+  display: inline-block;
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  color: var(--text);
+  text-decoration-color: var(--yellow);
+  text-decoration-thickness: 4px;
+  text-underline-offset: 6px;
+}
 
 .alt > .table-wrap {
   max-width: 760px;
