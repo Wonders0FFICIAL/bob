@@ -193,6 +193,13 @@ async function newPage(ctxOpts = {}) {
     await page.click('input[value="charcoal"]');
     check(/All dark/.test(await page.textContent(".bob3d-scheme-note")), "colour scheme note updates");
     await page.focus(".bob3d-canvas");
+    await page.keyboard.press("t");
+    check((await page.textContent('[data-act="tour"]')) === "Stop tour", "T starts the tour");
+    await page.keyboard.press("2");
+    check((await page.textContent('[data-act="tour"]')) === "Tour", "picking a part stops the tour");
+    check((await page.textContent(".bob3d-title")) === "Camera eye", "number key 2 picks the second part");
+    await page.keyboard.press("r");
+    check((await page.getAttribute('[data-part="eye"]', "aria-pressed")) === "false", "R resets the selection");
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("+");
     check(true, "keyboard rotate and zoom run without errors");

@@ -265,10 +265,14 @@
     <div class="bob3d" id="bob3d" data-state="idle">
       <div class="bob3d-stage">
         <img class="bob3d-poster" src="models/bob-v3-poster.webp" width="960" height="600" alt="Bob v3 concept model: a four-wheel-drive rover under a charcoal shell with orange fenders, a round camera eye and lights at the front and a drone hangar on the roof.">
-        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom."></canvas>
+        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom, 1 to 9 to pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset."></canvas>
         <p class="bob3d-msg" role="status">Loading 3D model…</p>
         <button class="bob3d-load" type="button" hidden>Load 3D model</button>
         <span class="bob3d-badge">Concept v3</span>
+        <div class="bob3d-top">
+          <button type="button" data-act="tour" aria-pressed="false">Tour</button>
+          <button type="button" data-act="full">Full screen</button>
+        </div>
         <div class="bob3d-tools" role="group" aria-label="View controls">
           <button type="button" data-act="reset">Reset view</button>
           <button type="button" data-act="doors" aria-pressed="false">Open hangar</button>
@@ -283,6 +287,7 @@
           <h3 class="bob3d-title">Bob v3</h3>
           <p class="bob3d-text">Drag to turn Bob around, or pick a part to zoom in on it. This is a concept model, so sizes may change when the real parts arrive. Parts marked Design plan are not built yet.</p>
         </div>
+        <p class="bob3d-keys">Keys: arrows turn, + and &minus; zoom, 1 to 9 pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset.</p>
         <div class="bob3d-parts" role="group" aria-label="Parts of Bob">
           <button type="button" data-part="shell" aria-pressed="false">Protective shell</button>
           <button type="button" data-part="eye" aria-pressed="false">Camera eye</button>
