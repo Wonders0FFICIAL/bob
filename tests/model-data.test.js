@@ -9,10 +9,10 @@ test.before(async () => {
 });
 
 function glbPartLabels() {
-  const buf = fs.readFileSync(path.join(__dirname, "..", "models", "bob-v2.glb"));
+  const buf = fs.readFileSync(path.join(__dirname, "..", "models", "bob-v3.glb"));
   const jsonLen = buf.readUInt32LE(12);
   const json = JSON.parse(buf.slice(20, 20 + jsonLen).toString("utf8"));
-  return json.nodes.map((n) => n.name).filter((n) => n && n !== "Bob v2");
+  return json.nodes.map((n) => n.name).filter((n) => n && n !== "Bob v3");
 }
 
 test("every part in the model has a colour role", () => {
@@ -30,12 +30,11 @@ test("every colour scheme styles every role", () => {
   }
 });
 
-test("every part belongs to exactly one clickable group, except the tow loop", () => {
+test("every part belongs to exactly one clickable group", () => {
   const labels = glbPartLabels();
   for (const label of labels) {
     const hits = data.GROUPS.filter((g) => g.match.test(label));
-    if (label === "Tow loop") assert.equal(hits.length, 0);
-    else assert.equal(hits.length, 1, label + " matched " + hits.length + " groups");
+    assert.equal(hits.length, 1, label + " matched " + hits.length + " groups");
   }
 });
 
@@ -47,13 +46,14 @@ test("each group finds parts in the model and has text to show", () => {
   }
 });
 
-test("the default scheme exists and the hybrid scheme overrides the bay colour", () => {
+test("the default scheme exists and the accent differs from the shell in every scheme", () => {
   assert.ok(data.SCHEMES.some((s) => s.id === data.DEFAULT_SCHEME));
-  const hybrid = data.SCHEMES.find((s) => s.id === "hybrid");
-  assert.notEqual(data.materialFor(hybrid, "Electronics bay").color, data.materialFor(hybrid, "Payload compartment").color);
+  for (const s of data.SCHEMES) {
+    assert.notEqual(data.materialFor(s, "Outer shell").color, data.materialFor(s, "Fender front left").color, s.id);
+  }
 });
 
 test("the web model stays small", () => {
-  const size = fs.statSync(path.join(__dirname, "..", "models", "bob-v2.glb")).size;
+  const size = fs.statSync(path.join(__dirname, "..", "models", "bob-v3.glb")).size;
   assert.ok(size < 1024 * 1024, "model is " + size + " bytes");
 });

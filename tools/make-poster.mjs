@@ -37,7 +37,7 @@ const png = await page.evaluate(async () => {
   const canvas = document.createElement("canvas");
   canvas.style.cssText = "position:fixed;left:0;top:0;width:960px;height:600px";
   document.body.append(canvas);
-  const v = await createViewer({ canvas, modelUrl: "/models/bob-v2.glb", calm: true });
+  const v = await createViewer({ canvas, modelUrl: "/models/bob-v3.glb", calm: true });
   const scheme = SCHEMES[0];
   for (const n of v.names()) {
     const m = materialFor(scheme, n);
@@ -47,7 +47,7 @@ const png = await page.evaluate(async () => {
   v.render();
   return canvas.toDataURL("image/png");
 });
-fs.writeFileSync(path.join(root, "models", "bob-v2-poster.png"), Buffer.from(png.split(",")[1], "base64"));
+fs.writeFileSync(path.join(root, "models", "bob-v3-poster.png"), Buffer.from(png.split(",")[1], "base64"));
 await browser.close();
 server.close();
-console.log("wrote models/bob-v2-poster.png (convert to webp with: python3 -c ...)");
+console.log("wrote models/bob-v3-poster.png (convert to webp with: python3 -c ...)");

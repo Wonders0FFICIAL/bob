@@ -6,7 +6,7 @@ import {
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-const HOME = { azimuth: -0.75, polar: 1.18, distance: 1.05 };
+const HOME = { azimuth: 0.85, polar: 1.22, distance: 0.95 };
 const DOOR_OPEN_RAD = (110 * Math.PI) / 180;
 
 function shadowTexture() {
@@ -65,7 +65,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     if (!o.isMesh) return;
     o.material = o.material.clone();
     o.material.userData.base = { emissive: new Color(0x000000), intensity: 0 };
-    const holder = o.parent && o.parent.name && o.parent.name !== "Bob_v2" && !o.parent.isScene ? o.parent : o;
+    const holder = o.parent && o.parent.name && !/^Bob_v\d+$/.test(o.parent.name) && !o.parent.isScene ? o.parent : o;
     const label = labelOf(holder.name || o.name);
     if (!parts.has(label)) parts.set(label, { node: holder, meshes: [] });
     parts.get(label).meshes.push(o);
@@ -110,8 +110,14 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     const entry = parts.get("Hangar door " + side);
     if (!entry) continue;
     const door = entry.node;
-    const sy = door.position.y > 0 ? 1 : -1;
-    const hinge = new Vector3(door.position.x, sy * 0.077, 0.204);
+    model.updateMatrixWorld(true);
+    const wb = new Box3().setFromObject(door);
+    const lo = door.parent.worldToLocal(wb.min.clone());
+    const hi = door.parent.worldToLocal(wb.max.clone());
+    const cx = (lo.x + hi.x) / 2;
+    const cz = (lo.z + hi.z) / 2;
+    const sy = lo.y + hi.y > 0 ? 1 : -1;
+    const hinge = new Vector3(cx, sy > 0 ? Math.max(lo.y, hi.y) : Math.min(lo.y, hi.y), cz);
     const pivot = new Group();
     pivot.position.copy(hinge);
     door.parent.add(pivot);
@@ -281,6 +287,13 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     },
     setDoorsOpen(open) {
       doorsGoal = open ? 1 : 0;
+      wake();
+    },
+    setHidden(names, hidden) {
+      for (const n of names) {
+        const e = parts.get(n);
+        if (e) e.node.visible = !hidden;
+      }
       wake();
     },
     setLightsOff(off) {

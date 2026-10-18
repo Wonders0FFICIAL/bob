@@ -1,6 +1,6 @@
 import { GROUPS, SCHEMES, DEFAULT_SCHEME, namesIn, materialFor } from "./model-data.js";
 
-const MODEL_URL = "models/bob-v2.glb";
+const MODEL_URL = "models/bob-v3.glb";
 const FALLBACK = "Your browser can't show the 3D model, so here is a picture instead.";
 
 function hasWebGL() {
@@ -26,10 +26,11 @@ export function initModel() {
   const schemeNote = root.querySelector(".bob3d-scheme-note");
   const doorsBtn = root.querySelector('[data-act="doors"]');
   const lightsBtn = root.querySelector('[data-act="lights"]');
+  const shellBtn = root.querySelector('[data-act="shell"]');
   const resetBtn = root.querySelector('[data-act="reset"]');
   const zoomIn = root.querySelector('[data-act="zoom-in"]');
   const zoomOut = root.querySelector('[data-act="zoom-out"]');
-  const actionBtns = [doorsBtn, lightsBtn, resetBtn, zoomIn, zoomOut];
+  const actionBtns = [doorsBtn, lightsBtn, shellBtn, resetBtn, zoomIn, zoomOut];
 
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const intro = { title: title.textContent, text: text.textContent };
@@ -98,7 +99,15 @@ export function initModel() {
     applyLights();
   }
 
+  function toggleShell() {
+    const hide = shellBtn.getAttribute("aria-pressed") !== "true";
+    shellBtn.setAttribute("aria-pressed", String(hide));
+    shellBtn.textContent = hide ? "Show shell" : "Hide shell";
+    viewer.setHidden(names.filter((n) => /^(Outer shell|Fender|BOB lettering|Eye ring|Reflective tape)/.test(n)), hide);
+  }
+
   function wire() {
+    shellBtn.addEventListener("click", toggleShell);
     for (const b of partBtns) b.addEventListener("click", () => select(selected === b.dataset.part ? null : b.dataset.part));
     for (const i of schemeInputs) i.addEventListener("change", () => { if (i.checked) applyScheme(i.value); });
     doorsBtn.addEventListener("click", () => toggleDoors());

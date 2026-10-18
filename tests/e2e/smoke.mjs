@@ -168,15 +168,17 @@ async function newPage(ctxOpts = {}) {
   const state = await page.evaluate(() => document.querySelector("#bob3d").dataset.state);
   check(state === "ready", "3D model loads under the real security headers (state " + state + ")");
   if (state === "ready") {
-    await page.click('[data-part="camera"]');
-    check((await page.textContent(".bob3d-title")) === "Camera mast", "picking a part shows its description");
-    check((await page.getAttribute('[data-part="camera"]', "aria-pressed")) === "true", "picked part is marked pressed");
+    await page.click('[data-part="eye"]');
+    check((await page.textContent(".bob3d-title")) === "Camera eye", "picking a part shows its description");
+    check((await page.getAttribute('[data-part="eye"]', "aria-pressed")) === "true", "picked part is marked pressed");
     await page.click('[data-act="doors"]');
     check((await page.textContent('[data-act="doors"]')) === "Close hangar", "hangar button toggles");
+    await page.click('[data-act="shell"]');
+    check((await page.textContent('[data-act="shell"]')) === "Show shell", "hide shell button toggles");
     await page.click('[data-act="lights"]');
     check(await page.evaluate(() => document.querySelector("#bob3d").classList.contains("is-dark")), "lights off darkens the stage");
     await page.click('input[value="charcoal"]');
-    check(/Hides soot/.test(await page.textContent(".bob3d-scheme-note")), "colour scheme note updates");
+    check(/All dark/.test(await page.textContent(".bob3d-scheme-note")), "colour scheme note updates");
     await page.focus(".bob3d-canvas");
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("+");
