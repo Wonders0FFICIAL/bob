@@ -7,6 +7,7 @@ import { initTheme } from "./features/theme.js";
 import { initCopyLink } from "./features/copylink.js";
 import { initVideo } from "./features/video.js";
 import { initDemo } from "./features/demo.js";
+import { initModel } from "./features/model.js";
 
 startClock();
 initControl();
@@ -17,3 +18,4 @@ initTheme();
 initCopyLink();
 initVideo();
 initDemo();
+initModel();

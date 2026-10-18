@@ -5,7 +5,7 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
-  ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json",
+  ".svg": "image/svg+xml", ".glb": "model/gltf-binary", ".webp": "image/webp", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json", ".webmanifest": "application/manifest+json",
 };
 
 function shim(res) {

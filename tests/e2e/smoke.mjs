@@ -45,7 +45,7 @@ const base = "http://localhost:" + server.address().port;
 const failures = [];
 const check = (ok, label) => { console.log((ok ? "ok   " : "FAIL ") + label); if (!ok) failures.push(label); };
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 
 let visitor = 0;
 async function newPage(ctxOpts = {}) {
@@ -157,6 +157,45 @@ async function newPage(ctxOpts = {}) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   check(overflow <= 0, "no horizontal scroll at phone width (overflow " + overflow + "px)");
   check(problems.pageErrors.length === 0, "no page errors on mobile");
+  await ctx.close();
+}
+
+{
+  const { ctx, page, problems } = await newPage();
+  await page.goto(base + "/");
+  await page.evaluate(() => document.querySelector("#inside").scrollIntoView());
+  await page.waitForFunction(() => ["ready", "fallback"].includes(document.querySelector("#bob3d").dataset.state), null, { timeout: 30000 });
+  const state = await page.evaluate(() => document.querySelector("#bob3d").dataset.state);
+  check(state === "ready", "3D model loads under the real security headers (state " + state + ")");
+  if (state === "ready") {
+    await page.click('[data-part="camera"]');
+    check((await page.textContent(".bob3d-title")) === "Camera mast", "picking a part shows its description");
+    check((await page.getAttribute('[data-part="camera"]', "aria-pressed")) === "true", "picked part is marked pressed");
+    await page.click('[data-act="doors"]');
+    check((await page.textContent('[data-act="doors"]')) === "Close hangar", "hangar button toggles");
+    await page.click('[data-act="lights"]');
+    check(await page.evaluate(() => document.querySelector("#bob3d").classList.contains("is-dark")), "lights off darkens the stage");
+    await page.click('input[value="charcoal"]');
+    check(/Hides soot/.test(await page.textContent(".bob3d-scheme-note")), "colour scheme note updates");
+    await page.focus(".bob3d-canvas");
+    await page.keyboard.press("ArrowLeft");
+    await page.keyboard.press("+");
+    check(true, "keyboard rotate and zoom run without errors");
+  }
+  check(problems.csp.length === 0, "no CSP violations from the 3D viewer " + problems.csp.join(" | "));
+  check(problems.pageErrors.length === 0, "no page errors from the 3D viewer " + problems.pageErrors.join(" | "));
+  await ctx.close();
+}
+
+{
+  const { ctx, page, problems } = await newPage({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+  await page.goto(base + "/");
+  await page.waitForSelector("#connect");
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check(wide <= 0, "no horizontal scroll with the 3D viewer at phone width (overflow " + wide + "px)");
+  const stage = await page.evaluate(() => document.querySelector(".bob3d-stage").getBoundingClientRect().width);
+  check(stage > 300 && stage <= 390, "3D stage fits a phone screen (" + Math.round(stage) + "px)");
+  check(problems.pageErrors.length === 0, "no page errors on mobile 3D layout");
   await ctx.close();
 }
 

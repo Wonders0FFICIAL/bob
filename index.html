@@ -260,6 +260,45 @@
 
   <section id="inside" class="block alt">
     <h2>Inside Bob</h2>
+    <div class="bob3d" id="bob3d" data-state="idle">
+      <div class="bob3d-stage">
+        <img class="bob3d-poster" src="models/bob-v2-poster.webp" width="960" height="600" alt="Bob v2 concept model: a low four-wheel-drive rover with a drone hangar on top, a payload bay at the back and a phone camera on a mast at the front.">
+        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom."></canvas>
+        <p class="bob3d-msg" role="status">Loading 3D model…</p>
+        <button class="bob3d-load" type="button" hidden>Load 3D model</button>
+        <span class="bob3d-badge">Concept v2</span>
+        <div class="bob3d-tools" role="group" aria-label="View controls">
+          <button type="button" data-act="reset">Reset view</button>
+          <button type="button" data-act="doors" aria-pressed="false">Open hangar</button>
+          <button type="button" data-act="lights" aria-pressed="false">Lights off</button>
+          <button type="button" data-act="zoom-in" aria-label="Zoom in">+</button>
+          <button type="button" data-act="zoom-out" aria-label="Zoom out">&minus;</button>
+        </div>
+      </div>
+      <div class="bob3d-side">
+        <div class="bob3d-info" aria-live="polite">
+          <h3 class="bob3d-title">Bob v2</h3>
+          <p class="bob3d-text">Drag to turn Bob around, or pick a part to zoom in on it. This is a concept model, so sizes may change when the real parts arrive.</p>
+        </div>
+        <div class="bob3d-parts" role="group" aria-label="Parts of Bob">
+          <button type="button" data-part="camera" aria-pressed="false">Camera mast</button>
+          <button type="button" data-part="hangar" aria-pressed="false">Drone hangar</button>
+          <button type="button" data-part="payload" aria-pressed="false">Payload bay</button>
+          <button type="button" data-part="chassis" aria-pressed="false">Chassis and electronics</button>
+          <button type="button" data-part="suspension" aria-pressed="false">Suspension</button>
+          <button type="button" data-part="wheels" aria-pressed="false">Wheels and drive</button>
+          <button type="button" data-part="tape" aria-pressed="false">Reflective tape</button>
+        </div>
+        <fieldset class="bob3d-colors">
+          <legend>Colour scheme</legend>
+          <label><input type="radio" name="bob3d-scheme" value="orange" checked> Safety orange</label>
+          <label><input type="radio" name="bob3d-scheme" value="charcoal"> Charcoal and tape</label>
+          <label><input type="radio" name="bob3d-scheme" value="hybrid"> Charcoal and orange</label>
+          <label><input type="radio" name="bob3d-scheme" value="red"> Rescue red</label>
+          <p class="bob3d-scheme-note">Stands out in poor light and on camera.</p>
+        </fieldset>
+      </div>
+    </div>
     <ol class="flow">
       <li><strong>Body</strong>A FlySky controller along with motors carry BOB forward.</li>
       <li><strong>Eyes</strong>An Android phone streaming its camera from the browser.</li>

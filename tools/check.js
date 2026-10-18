@@ -61,7 +61,7 @@ else {
     if (seen.has(file)) return;
     seen.add(file);
     const src = fs.readFileSync(file, "utf8");
-    for (const m of src.matchAll(/from "(\.[^"]+)"/g)) {
+    for (const m of src.matchAll(/(?:from |import\()"(\.[^"]+)"/g)) {
       const next = path.resolve(path.dirname(file), m[1]);
       if (!fs.existsSync(next)) fail(rel(file) + " imports missing module " + m[1]);
       else follow(next);
