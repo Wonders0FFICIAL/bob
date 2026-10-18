@@ -295,12 +295,12 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
       }
       wake();
     },
-    focus(names) {
+    focus(names, view) {
       const b = boxOf(names);
       if (b.isEmpty()) return;
       const c = b.getCenter(new Vector3());
       const sz = b.getSize(new Vector3()).length();
-      flyTo(c, Math.atan2(camera.position.x - c.x, camera.position.z - c.z), 1.15, Math.max(0.42, sz * 1.9 + 0.2));
+      flyTo(c, view ? view.azimuth : Math.atan2(camera.position.x - c.x, camera.position.z - c.z), view ? view.polar : 1.15, Math.max(0.62, sz * 2.4 + 0.25));
     },
     resetView() {
       flyTo(target.clone(), HOME.azimuth, HOME.polar, HOME.distance, 800);

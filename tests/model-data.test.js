@@ -43,6 +43,7 @@ test("each group finds parts in the model and has text to show", () => {
   for (const g of data.GROUPS) {
     assert.ok(data.namesIn(g, labels).length > 0, g.id + " matches nothing");
     assert.ok(g.title && g.text.length > 20);
+    assert.ok(g.view && Number.isFinite(g.view.azimuth) && g.view.polar > 0.35 && g.view.polar < 1.52, g.id + " needs a camera view");
   }
 });
 

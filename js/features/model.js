@@ -70,6 +70,8 @@ export function initModel() {
     root.classList.toggle("is-dark", lightsOff);
   }
 
+  const INSIDE = ["chassis", "suspension", "wheels", "payload"];
+
   function select(id) {
     selected = id;
     for (const b of partBtns) b.setAttribute("aria-pressed", String(b.dataset.part === id));
@@ -83,8 +85,9 @@ export function initModel() {
     title.textContent = g.title;
     text.textContent = g.text;
     const list = namesIn(g, names);
+    setShell(INSIDE.includes(id));
     viewer.highlight(list);
-    viewer.focus(list);
+    viewer.focus(list, g.view);
     if (id === "hangar" && doorsBtn.getAttribute("aria-pressed") !== "true") toggleDoors(true);
   }
 
@@ -115,7 +118,6 @@ export function initModel() {
 
   let tourTimer = 0;
   let tourIndex = 0;
-  const INSIDE = ["chassis", "suspension", "wheels", "payload"];
 
   function stopTour() {
     if (!tourTimer) return;
@@ -128,7 +130,6 @@ export function initModel() {
   function tourStep() {
     const id = partBtns[tourIndex % partBtns.length].dataset.part;
     tourIndex++;
-    setShell(INSIDE.includes(id));
     select(id);
     tourTimer = setTimeout(tourStep, calm ? 6000 : 4800);
   }
