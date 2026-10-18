@@ -147,7 +147,7 @@ export function initControl() {
   });
 
   $("full").addEventListener("click", () => {
-    const s = document.querySelector(".screen");
+    const s = document.querySelector($("demo").hidden ? ".screen" : ".screen-wrap");
     if (document.fullscreenElement) document.exitFullscreen();
     else if (s.requestFullscreen) s.requestFullscreen();
     else if (s.webkitRequestFullscreen) s.webkitRequestFullscreen();

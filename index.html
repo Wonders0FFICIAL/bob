@@ -65,7 +65,8 @@
         <div class="screen">
           <video id="rtc" autoplay playsinline muted aria-label="Live camera feed from Bob" hidden></video>
           <img id="feed" alt="Live camera feed from Bob" hidden>
-          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob." hidden></canvas>
+          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob, 1 to 3 for missions, 0 to stop, F for full screen." hidden></canvas>
+          <button id="demofull" class="demofull" type="button" hidden>Full screen</button>
           <div id="placeholder" class="placeholder">
             <p><strong id="phtitle">Bob's eyes are closed</strong></p>
             <p id="phtext">Enter the passcode below and press Connect, or try the demo.</p>
@@ -103,10 +104,11 @@
 
         <div id="demopanel" class="demo" hidden>
           <div class="demo-cmds">
-            <button data-cmd="fire">Report fire</button>
-            <button data-cmd="survivor">Survivor search</button>
-            <button data-cmd="base">Return to base</button>
-            <button data-cmd="stop">Stop</button>
+            <button data-cmd="fire">Report fire <kbd>1</kbd></button>
+            <button data-cmd="survivor">Survivor search <kbd>2</kbd></button>
+            <button data-cmd="base">Return to base <kbd>3</kbd></button>
+            <button data-cmd="stop">Stop <kbd>0</kbd></button>
+            <button data-cmd="reset" class="ghost">Reset <kbd>R</kbd></button>
           </div>
           <div class="demo-drive" role="group" aria-label="Manual drive">
             <button data-key="ArrowLeft">Left</button>
@@ -328,12 +330,15 @@
 
   <section id="team" class="block">
     <h2>The team</h2>
-    <p class="lead">Three people building a robot that goes in first.</p>
-    <ul class="team">
-      <li><span class="avatar" aria-hidden="true">I</span><strong>Izaan</strong><span class="role">Engineer</span><p>Builds and wires Bob: chassis, motors, power and sensors.</p></li>
-      <li><span class="avatar" aria-hidden="true">P</span><strong>Prithvidev</strong><span class="role">Designer</span><p>Shapes how Bob looks and fits together, from the shell to the lights.</p></li>
-      <li><span class="avatar" aria-hidden="true">R</span><strong>Ryan</strong><span class="role">Programmer</span><p>Writes the code that drives Bob and the control room you are using.</p></li>
-    </ul>
+    <p class="lead">Five people building a robot that goes in first.</p>
+    <div class="crew">
+      <h3 class="crew-title">Building the robot</h3>
+      <ul class="team"><li class="member" data-tone="amber"><span class="avatar" aria-hidden="true">I</span><div class="who"><strong>Izaan</strong><ul class="chips" aria-label="Izaan's roles"><li>Robot builder</li></ul><p>Builds the physical Bob: chassis, wiring, power and testing.</p></div></li><li class="member" data-tone="teal"><span class="avatar" aria-hidden="true">A</span><div class="who"><strong>Anupam</strong><ul class="chips" aria-label="Anupam's roles"><li>Robot builder</li></ul><p>Builds the physical Bob: chassis, wiring, power and testing.</p></div></li><li class="member" data-tone="coral"><span class="avatar" aria-hidden="true">P</span><div class="who"><strong>Prithvidev</strong><ul class="chips" aria-label="Prithvidev's roles"><li>Robot builder</li></ul><p>Builds the physical Bob: chassis, wiring, power and testing.</p></div></li></ul>
+    </div>
+    <div class="crew">
+      <h3 class="crew-title">Code and 3D concept</h3>
+      <ul class="team"><li class="member" data-tone="blue"><span class="avatar" aria-hidden="true">R</span><div class="who"><strong>Ryan</strong><ul class="chips" aria-label="Ryan's roles"><li>Programmer</li><li>3D modelling</li><li>Website and design system</li></ul><p>Writes the code, models Bob in 3D, and built this site and its design.</p></div></li><li class="member" data-tone="violet"><span class="avatar" aria-hidden="true">J</span><div class="who"><strong>Johaan</strong><ul class="chips" aria-label="Johaan's roles"><li>Programmer</li><li>3D modelling</li></ul><p>Writes the code and shapes the 3D concept of Bob with Ryan.</p></div></li></ul>
+    </div>
   </section>
 </main>
 

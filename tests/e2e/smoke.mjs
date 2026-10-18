@@ -151,6 +151,19 @@ async function newPage(ctxOpts = {}) {
 }
 
 {
+  const { ctx, page, problems } = await newPage();
+  await page.goto(base + "/");
+  await page.click("#demobtn");
+  check(await page.isVisible("#demofull"), "demo view shows its full screen button");
+  await page.keyboard.press("1");
+  check(/fire reported/.test(await page.textContent("#demolog")), "keyboard shortcut 1 reports a fire");
+  await page.keyboard.press("r");
+  check(!/fire reported/.test(await page.textContent("#demolog")), "R resets the demo");
+  check(problems.pageErrors.length === 0, "no page errors in the demo " + problems.pageErrors.join(" | "));
+  await ctx.close();
+}
+
+{
   const { ctx, page, problems } = await newPage({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
   await page.goto(base + "/");
   await page.waitForSelector("#connect");
