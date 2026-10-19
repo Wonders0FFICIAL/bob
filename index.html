@@ -42,7 +42,9 @@
     <a href="#about">Meet Bob</a>
     <a href="#watch" id="watchnav" hidden>Watch Bob</a>
     <a href="#inside">Inside Bob</a>
+    <a href="#roadmap">Roadmap</a>
     <a href="#team">Team</a>
+    <a href="#contact">Contact</a>
     <button class="theme-btn" id="theme" type="button" aria-label="Switch to night theme">
       <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
@@ -65,7 +67,8 @@
         <div class="screen">
           <video id="rtc" autoplay playsinline muted aria-label="Live camera feed from Bob" hidden></video>
           <img id="feed" alt="Live camera feed from Bob" hidden>
-          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob." hidden></canvas>
+          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob, 1 to 3 for missions, 0 to stop, F for full screen." hidden></canvas>
+          <button id="demofull" class="demofull" type="button" hidden>Full screen</button>
           <div id="placeholder" class="placeholder">
             <p><strong id="phtitle">Bob's eyes are closed</strong></p>
             <p id="phtext">Enter the passcode below and press Connect, or try the demo.</p>
@@ -103,10 +106,11 @@
 
         <div id="demopanel" class="demo" hidden>
           <div class="demo-cmds">
-            <button data-cmd="fire">Report fire</button>
-            <button data-cmd="survivor">Survivor search</button>
-            <button data-cmd="base">Return to base</button>
-            <button data-cmd="stop">Stop</button>
+            <button data-cmd="fire">Report fire <kbd>1</kbd></button>
+            <button data-cmd="survivor">Survivor search <kbd>2</kbd></button>
+            <button data-cmd="base">Return to base <kbd>3</kbd></button>
+            <button data-cmd="stop">Stop <kbd>0</kbd></button>
+            <button data-cmd="reset" class="ghost">Reset <kbd>R</kbd></button>
           </div>
           <div class="demo-drive" role="group" aria-label="Manual drive">
             <button data-key="ArrowLeft">Left</button>
@@ -263,10 +267,14 @@
     <div class="bob3d" id="bob3d" data-state="idle">
       <div class="bob3d-stage">
         <img class="bob3d-poster" src="models/bob-v3-poster.webp" width="960" height="600" alt="Bob v3 concept model: a four-wheel-drive rover under a charcoal shell with orange fenders, a round camera eye and lights at the front and a drone hangar on the roof.">
-        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom."></canvas>
+        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom, 1 to 9 to pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset."></canvas>
         <p class="bob3d-msg" role="status">Loading 3D model…</p>
         <button class="bob3d-load" type="button" hidden>Load 3D model</button>
         <span class="bob3d-badge">Concept v3</span>
+        <div class="bob3d-top">
+          <button type="button" data-act="tour" aria-pressed="false">Tour</button>
+          <button type="button" data-act="full">Full screen</button>
+        </div>
         <div class="bob3d-tools" role="group" aria-label="View controls">
           <button type="button" data-act="reset">Reset view</button>
           <button type="button" data-act="doors" aria-pressed="false">Open hangar</button>
@@ -281,6 +289,7 @@
           <h3 class="bob3d-title">Bob v3</h3>
           <p class="bob3d-text">Drag to turn Bob around, or pick a part to zoom in on it. This is a concept model, so sizes may change when the real parts arrive. Parts marked Design plan are not built yet.</p>
         </div>
+        <p class="bob3d-keys">Keys: arrows turn, + and &minus; zoom, 1 to 9 pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset.</p>
         <div class="bob3d-parts" role="group" aria-label="Parts of Bob">
           <button type="button" data-part="shell" aria-pressed="false">Protective shell</button>
           <button type="button" data-part="eye" aria-pressed="false">Camera eye</button>
@@ -302,12 +311,17 @@
         </fieldset>
       </div>
     </div>
-    <ol class="flow">
-      <li><strong>Body</strong>A FlySky controller and four driven wheels carry Bob forward under a protective shell.</li>
-      <li><strong>Eyes</strong>Today an Android phone streams its camera from the browser. Next, an ESP32-CAM in the shell.</li>
-      <li><strong>Link</strong>Mobile data or WiFi carries the video to this page over HTTPS.</li>
-      <li><strong>Control room</strong>This page shows the view and sends commands.</li>
-    </ol>
+    <div class="how">
+      <h3>How Bob works</h3>
+      <ol class="pipe">
+        <li class="node"><strong>Bob's camera</strong><span>A phone today. An ESP32-CAM in the shell next.</span></li>
+        <li class="hop" aria-hidden="true"><span>video</span></li>
+        <li class="node"><strong>The internet</strong><span>Mobile data or WiFi, through LiveKit Cloud, over HTTPS.</span></li>
+        <li class="hop" aria-hidden="true"><span>video</span></li>
+        <li class="node"><strong>This page</strong><span>The control room shows the view and sends camera commands back.</span></li>
+      </ol>
+      <p class="pipe-note">Driving is separate. A FlySky radio controller talks to Bob's motors directly.</p>
+    </div>
     <div class="table-wrap">
       <table>
         <thead>
@@ -324,16 +338,63 @@
         </tbody>
       </table>
     </div>
+    <h3 class="spec-title">Specs <small>concept v3, sizes may change</small></h3>
+    <div class="table-wrap">
+      <table class="specs">
+        <tbody>
+          <tr><th scope="row">Size, shell closed</th><td>466 &times; 252 &times; 210 mm</td></tr>
+          <tr><th scope="row">Height, hangar open</th><td>About 298 mm</td></tr>
+          <tr><th scope="row">Drive</th><td>Four-wheel drive, wheels 100 mm across and 30 mm wide</td></tr>
+          <tr><th scope="row">Wheelbase</th><td>350 mm</td></tr>
+          <tr><th scope="row">Suspension</th><td>Solid axles with 55 mm oil-filled shocks</td></tr>
+          <tr><th scope="row">Chassis</th><td>Two plates, 424 &times; 180 mm</td></tr>
+          <tr><th scope="row">Shell</th><td>One piece, 2.5 mm walls (design plan)</td></tr>
+          <tr><th scope="row">Camera</th><td>Phone today, ESP32-CAM planned</td></tr>
+          <tr><th scope="row">Driving</th><td>FlySky radio controller</td></tr>
+          <tr><th scope="row">Electronics</th><td>Arduino, 16x2 LCD, LiPo battery, speed controllers, 3A regulator</td></tr>
+          <tr><th scope="row">Weight</th><td>Not measured yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="roadmap" class="block">
+    <h2>Roadmap</h2>
+    <p class="lead">Where Bob is and where it is going. There are no dates yet, because we only promise what we have built.</p>
+    <ol class="road">
+      <li data-status="done"><span class="tag">Done</span><h3>Bob v1</h3><p>A car with a phone for eyes, and the control room you are using now.</p></li>
+      <li data-status="done"><span class="tag">Done</span><h3>Control room site</h3><p>Live video, snapshots, a practice mission and a 3D model of Bob.</p></li>
+      <li data-status="doing"><span class="tag">In progress</span><h3>Bob v3 design</h3><p>A full shell, an ESP32-CAM eye, lights and an LCD, modelled in CAD.</p></li>
+      <li data-status="next"><span class="tag">Planned</span><h3>3D print Bob v3</h3><p>Print the new body for a better demo.</p></li>
+      <li data-status="next"><span class="tag">Planned</span><h3>ESP32-CAM replaces the phone</h3><p>The camera moves inside the shell and still streams to this page.</p></li>
+      <li data-status="next"><span class="tag">Planned</span><h3>Drone hangar and payload drop</h3><p>A micro-drone on the roof and a trapdoor for supplies.</p></li>
+      <li data-status="next"><span class="tag">Planned</span><h3>Competition demo</h3><p>Bob running a full mission in front of judges.</p></li>
+    </ol>
   </section>
 
   <section id="team" class="block">
     <h2>The team</h2>
-    <p class="lead">Three people building a robot that goes in first.</p>
-    <ul class="team">
-      <li><span class="avatar" aria-hidden="true">I</span><strong>Izaan</strong><span class="role">Engineer</span><p>Builds and wires Bob: chassis, motors, power and sensors.</p></li>
-      <li><span class="avatar" aria-hidden="true">P</span><strong>Prithvidev</strong><span class="role">Designer</span><p>Shapes how Bob looks and fits together, from the shell to the lights.</p></li>
-      <li><span class="avatar" aria-hidden="true">R</span><strong>Ryan</strong><span class="role">Programmer</span><p>Writes the code that drives Bob and the control room you are using.</p></li>
-    </ul>
+    <p class="lead">Five people building a robot that goes in first.</p>
+    <div class="crew">
+      <div class="crew-head"><h3>Building the robot</h3><p>The physical Bob.</p></div>
+      <ul class="crew-list">
+        <li class="crew-row"><span class="crew-no" aria-hidden="true">01</span><strong class="crew-name">Izaan</strong><ul class="crew-roles" aria-label="Izaan's roles"><li>Robot builder</li></ul></li>
+        <li class="crew-row"><span class="crew-no" aria-hidden="true">02</span><strong class="crew-name">Anupam</strong><ul class="crew-roles" aria-label="Anupam's roles"><li>Robot builder</li></ul></li>
+        <li class="crew-row"><span class="crew-no" aria-hidden="true">03</span><strong class="crew-name">Prithvidev</strong><ul class="crew-roles" aria-label="Prithvidev's roles"><li>Robot builder</li></ul></li>
+      </ul>
+    </div>
+    <div class="crew">
+      <div class="crew-head"><h3>Code and 3D concept</h3><p>The software and the 3D models of Bob.</p></div>
+      <ul class="crew-list">
+        <li class="crew-row"><span class="crew-no" aria-hidden="true">04</span><strong class="crew-name">Ryan</strong><ul class="crew-roles" aria-label="Ryan's roles"><li>Programmer</li><li>3D modelling</li><li>Website and design system</li></ul></li>
+        <li class="crew-row"><span class="crew-no" aria-hidden="true">05</span><strong class="crew-name">Johaan</strong><ul class="crew-roles" aria-label="Johaan's roles"><li>Programmer</li><li>3D modelling</li></ul></li>
+      </ul>
+    </div>
+  </section>
+  <section id="contact" class="block">
+    <h2>Contact</h2>
+    <p class="lead">A rescue team that wants to try Bob, a sponsor, a judge, or just a question? Write to us.</p>
+    <a class="mail" href="mailto:bob@jrofficial.org">bob@jrofficial.org</a>
   </section>
 </main>
 

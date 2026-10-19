@@ -5,6 +5,7 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 const HOME = { azimuth: 0.85, polar: 1.22, distance: 0.95 };
 const DOOR_OPEN_RAD = (110 * Math.PI) / 180;
@@ -23,11 +24,38 @@ function shadowTexture() {
   return t;
 }
 
+function mergeFaces(root) {
+  root.updateMatrixWorld(true);
+  const groups = new Map();
+  root.traverse((o) => {
+    if (!o.isMesh || !o.parent || o.parent === root || o.parent.isScene) return;
+    if (!groups.has(o.parent)) groups.set(o.parent, []);
+    groups.get(o.parent).push(o);
+  });
+  for (const [holder, meshes] of groups) {
+    if (meshes.length < 2) continue;
+    holder.updateMatrixWorld(true);
+    const inverse = holder.matrixWorld.clone().invert();
+    const geos = meshes.map((m) => {
+      const g = m.geometry.clone();
+      g.applyMatrix4(inverse.clone().multiply(m.matrixWorld));
+      for (const k of Object.keys(g.attributes)) if (k !== "position" && k !== "normal") g.deleteAttribute(k);
+      g.morphAttributes = {};
+      return g.index ? g.toNonIndexed() : g;
+    });
+    const merged = mergeGeometries(geos, false);
+    if (!merged) continue;
+    const mesh = new Mesh(merged, meshes[0].material);
+    for (const m of meshes) { m.parent.remove(m); m.geometry.dispose(); }
+    holder.add(mesh);
+  }
+}
+
 function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
 export async function createViewer({ canvas, modelUrl, calm = false }) {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "low-power" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.setClearColor(0x000000, 0);
 
   const scene = new Scene();
@@ -49,6 +77,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
 
   const gltf = await new GLTFLoader().loadAsync(modelUrl);
   const model = gltf.scene;
+  mergeFaces(model);
   scene.add(model);
 
   const box = new Box3().setFromObject(model);
@@ -154,7 +183,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
 
     if (tween) {
       const t = Math.min(1, (now - tween.t0) / tween.ms);
-      const k = ease(t);
+      const k = tween.out ? 1 - (1 - t) * (1 - t) : ease(t);
       controls.target.lerpVectors(tween.fromTarget, tween.toTarget, k);
       sph.azimuth = tween.fromAz + (tween.toAz - tween.fromAz) * k;
       sph.polar = tween.fromPol + (tween.toPol - tween.fromPol) * k;
@@ -214,10 +243,10 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     return b;
   }
 
-  function flyTo(toTarget, toAz, toPol, toDist, ms = 700) {
+  function flyTo(toTarget, toAz, toPol, toDist, ms = 700, out = false) {
     readOrbit();
     tween = {
-      t0: performance.now(), ms: calm ? 1 : ms,
+      t0: performance.now(), ms: calm ? 1 : ms, out,
       fromTarget: controls.target.clone(), toTarget,
       fromAz: sph.azimuth, toAz: nearestAngle(sph.azimuth, toAz),
       fromPol: sph.polar, toPol,
@@ -235,6 +264,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
 
   const api = {
     names: () => [...parts.keys()],
+    stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
     setMaterial(names, { color, roughness, metalness, emissive, emissiveIntensity }) {
       for (const n of names) {
         const e = parts.get(n);
@@ -265,12 +295,12 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
       }
       wake();
     },
-    focus(names) {
+    focus(names, view) {
       const b = boxOf(names);
       if (b.isEmpty()) return;
       const c = b.getCenter(new Vector3());
       const sz = b.getSize(new Vector3()).length();
-      flyTo(c, Math.atan2(camera.position.x - c.x, camera.position.z - c.z), 1.15, Math.max(0.42, sz * 1.9 + 0.2));
+      flyTo(c, view ? view.azimuth : Math.atan2(camera.position.x - c.x, camera.position.z - c.z), view ? view.polar : 1.15, Math.max(0.62, sz * 2.4 + 0.25));
     },
     resetView() {
       flyTo(target.clone(), HOME.azimuth, HOME.polar, HOME.distance, 800);
@@ -278,12 +308,12 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     zoom(factor) {
       readOrbit();
       const to = MathUtils.clamp(sph.distance * factor, 0.35, 1.6);
-      flyTo(controls.target.clone(), sph.azimuth, sph.polar, to, 300);
+      flyTo(controls.target.clone(), sph.azimuth, sph.polar, to, 220, true);
     },
     rotate(dAz, dPol) {
       readOrbit();
       const pol = MathUtils.clamp(sph.polar + dPol, 0.35, 1.52);
-      flyTo(controls.target.clone(), sph.azimuth + dAz, pol, sph.distance, 250);
+      flyTo(controls.target.clone(), sph.azimuth + dAz, pol, sph.distance, 200, true);
     },
     setDoorsOpen(open) {
       doorsGoal = open ? 1 : 0;

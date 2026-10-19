@@ -27,10 +27,12 @@ export function initModel() {
   const doorsBtn = root.querySelector('[data-act="doors"]');
   const lightsBtn = root.querySelector('[data-act="lights"]');
   const shellBtn = root.querySelector('[data-act="shell"]');
+  const tourBtn = root.querySelector('[data-act="tour"]');
+  const fullBtn = root.querySelector('[data-act="full"]');
   const resetBtn = root.querySelector('[data-act="reset"]');
   const zoomIn = root.querySelector('[data-act="zoom-in"]');
   const zoomOut = root.querySelector('[data-act="zoom-out"]');
-  const actionBtns = [doorsBtn, lightsBtn, shellBtn, resetBtn, zoomIn, zoomOut];
+  const actionBtns = [doorsBtn, lightsBtn, shellBtn, tourBtn, fullBtn, resetBtn, zoomIn, zoomOut];
 
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const intro = { title: title.textContent, text: text.textContent };
@@ -47,6 +49,7 @@ export function initModel() {
     for (const i of schemeInputs) i.disabled = !on;
   }
   setEnabled(false);
+  if (!document.fullscreenEnabled) fullBtn.hidden = true;
 
   function applyScheme(id) {
     const s = SCHEMES.find((x) => x.id === id) || SCHEMES[0];
@@ -67,6 +70,8 @@ export function initModel() {
     root.classList.toggle("is-dark", lightsOff);
   }
 
+  const INSIDE = ["chassis", "suspension", "wheels", "payload"];
+
   function select(id) {
     selected = id;
     for (const b of partBtns) b.setAttribute("aria-pressed", String(b.dataset.part === id));
@@ -80,8 +85,9 @@ export function initModel() {
     title.textContent = g.title;
     text.textContent = g.text;
     const list = namesIn(g, names);
+    setShell(INSIDE.includes(id));
     viewer.highlight(list);
-    viewer.focus(list);
+    viewer.focus(list, g.view);
     if (id === "hangar" && doorsBtn.getAttribute("aria-pressed") !== "true") toggleDoors(true);
   }
 
@@ -99,20 +105,68 @@ export function initModel() {
     applyLights();
   }
 
-  function toggleShell() {
-    const hide = shellBtn.getAttribute("aria-pressed") !== "true";
+  function setShell(hide) {
+    if (shellBtn.getAttribute("aria-pressed") === String(hide)) return;
     shellBtn.setAttribute("aria-pressed", String(hide));
     shellBtn.textContent = hide ? "Show shell" : "Hide shell";
     viewer.setHidden(names.filter((n) => /^(Outer shell|Fender|BOB lettering|Eye ring|Reflective tape)/.test(n)), hide);
   }
 
+  function toggleShell() {
+    setShell(shellBtn.getAttribute("aria-pressed") !== "true");
+  }
+
+  let tourTimer = 0;
+  let tourIndex = 0;
+
+  function stopTour() {
+    if (!tourTimer) return;
+    clearTimeout(tourTimer);
+    tourTimer = 0;
+    tourBtn.setAttribute("aria-pressed", "false");
+    tourBtn.textContent = "Tour";
+  }
+
+  function tourStep() {
+    const id = partBtns[tourIndex % partBtns.length].dataset.part;
+    tourIndex++;
+    select(id);
+    tourTimer = setTimeout(tourStep, calm ? 6000 : 4800);
+  }
+
+  function toggleTour() {
+    if (tourTimer) {
+      stopTour();
+      return;
+    }
+    tourBtn.setAttribute("aria-pressed", "true");
+    tourBtn.textContent = "Stop tour";
+    tourIndex = 0;
+    tourStep();
+  }
+
+  function toggleFull() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (root.requestFullscreen) root.requestFullscreen();
+  }
+
+  const KEYS = { o: () => toggleDoors(), h: toggleShell, l: toggleLights, t: toggleTour, f: toggleFull, r: () => { stopTour(); select(null); viewer.resetView(); } };
+
   function wire() {
-    shellBtn.addEventListener("click", toggleShell);
-    for (const b of partBtns) b.addEventListener("click", () => select(selected === b.dataset.part ? null : b.dataset.part));
+    shellBtn.addEventListener("click", () => { stopTour(); toggleShell(); });
+    tourBtn.addEventListener("click", toggleTour);
+    fullBtn.addEventListener("click", toggleFull);
+    canvas.addEventListener("pointerdown", stopTour);
+    document.addEventListener("fullscreenchange", () => {
+      fullBtn.textContent = document.fullscreenElement === root ? "Exit full screen" : "Full screen";
+      if (viewer) canvas.focus({ preventScroll: true });
+    });
+    for (const b of partBtns) b.addEventListener("click", () => { stopTour(); select(selected === b.dataset.part ? null : b.dataset.part); });
     for (const i of schemeInputs) i.addEventListener("change", () => { if (i.checked) applyScheme(i.value); });
     doorsBtn.addEventListener("click", () => toggleDoors());
     lightsBtn.addEventListener("click", toggleLights);
     resetBtn.addEventListener("click", () => {
+      stopTour();
       select(null);
       viewer.resetView();
     });
@@ -120,6 +174,16 @@ export function initModel() {
     zoomOut.addEventListener("click", () => viewer.zoom(1.25));
     canvas.addEventListener("keydown", (e) => {
       const step = 0.25;
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const k = e.key.toLowerCase();
+        if (KEYS[k]) { if (!e.repeat) KEYS[k](); e.preventDefault(); return; }
+        if (/^[1-9]$/.test(e.key) && partBtns[Number(e.key) - 1]) {
+          stopTour();
+          if (!e.repeat) partBtns[Number(e.key) - 1].click();
+          e.preventDefault();
+          return;
+        }
+      }
       if (e.key === "ArrowLeft") viewer.rotate(-step, 0);
       else if (e.key === "ArrowRight") viewer.rotate(step, 0);
       else if (e.key === "ArrowUp") viewer.rotate(0, -step);
@@ -185,8 +249,10 @@ export function initModel() {
   new IntersectionObserver(
     (entries) => {
       inView = entries[entries.length - 1].isIntersecting;
-      if (viewer) viewer.setVisible(inView);
-      else if (inView && !saveData) load();
+      if (viewer) {
+        viewer.setVisible(inView);
+        if (!inView) stopTour();
+      } else if (inView && !saveData) load();
     },
     { rootMargin: "300px" }
   ).observe(root);

@@ -8,7 +8,9 @@ export function initDemo() {
   const cv = $("demo"), btn = $("demobtn"), panel = $("demopanel"), logEl = $("demolog");
   const ctx = cv.getContext("2d");
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const W = cv.width, H = cv.height, RANGE = 190;
+  const W = 640, H = 480, RANGE = 190;
+  const fullBtn = $("demofull");
+  let scale = 1, t0 = 0;
   const BASE = { x: 70, y: 410 };
   const RUBBLE = [[200, 300, 26], [300, 160, 32], [460, 330, 22], [150, 150, 20], [540, 200, 28], [380, 420, 18]];
 
@@ -16,6 +18,16 @@ export function initDemo() {
   let bob, target, onArrive, ents, keys, trail, battery, path = [];
 
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  const elapsed = () => { const s = Math.floor((performance.now() - t0) / 1000); return pad(Math.floor(s / 60)) + ":" + pad(s % 60); };
+  function fit() {
+    const w = cv.clientWidth;
+    if (!w) return;
+    const want = Math.min(3, Math.max(1, Math.ceil(w * (window.devicePixelRatio || 1) / W)));
+    if (want === scale && cv.width === W * want) return;
+    scale = want;
+    cv.width = W * scale;
+    cv.height = H * scale;
+  }
   const stamp = () => { const d = new Date(); return pad(d.getMinutes()) + ":" + pad(d.getSeconds()); };
 
   function log(text, kind) {
@@ -107,7 +119,7 @@ export function initDemo() {
   function reset() {
     bob = { x: BASE.x, y: BASE.y, a: -0.8 };
     target = onArrive = null; path = [];
-    ents = []; keys = {}; trail = []; battery = 100;
+    ents = []; keys = {}; trail = []; battery = 100; t0 = performance.now();
     logEl.innerHTML = "";
     log("Bob online at base. Awaiting orders.");
   }
@@ -134,11 +146,17 @@ export function initDemo() {
     },
     base() {
       log("Returning to base.");
-      goto(BASE, 14, () => log("Bob docked. Battery " + Math.round(battery) + "%.", "ok"));
+      goto(BASE, 14, () => {
+        const saved = ents.some((x) => x.type === "person" && x.found);
+        log(saved ? "Mission complete in " + elapsed() + ". Person located, Bob docked with " + Math.round(battery) + "% battery." : "Bob docked. Battery " + Math.round(battery) + "%.", "ok");
+      });
     },
     stop() {
       target = onArrive = null; path = [];
       log("Stopped. Holding position.");
+    },
+    reset() {
+      reset();
     },
   };
 
@@ -196,6 +214,7 @@ export function initDemo() {
 
   function draw() {
     const t = calm ? 0 : frame;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
     ctx.fillStyle = "#050B10"; ctx.fillRect(0, 0, W, H);
 
     ctx.strokeStyle = "rgba(255,255,255,.05)"; ctx.lineWidth = 1;
@@ -270,7 +289,7 @@ export function initDemo() {
     const hdg = Math.round(((bob.a * 180 / Math.PI + 90) % 360 + 360) % 360);
     ctx.fillStyle = "rgba(5,11,16,.85)"; ctx.fillRect(0, H - 28, W, 28);
     ctx.fillStyle = "#E6EDF2"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "left";
-    ctx.fillText("TEMP " + Math.round(temp()) + "°C    HDG " + pad(hdg).padStart(3, "0") + "°    BATT " + Math.round(battery) + "%    " + (target ? "AUTO" : "MANUAL"), 14, H - 9);
+    ctx.fillText("TEMP " + Math.round(temp()) + "°C    HDG " + pad(hdg).padStart(3, "0") + "°    BATT " + Math.round(battery) + "%    " + (target ? "AUTO" : "MANUAL") + "    T+" + elapsed(), 14, H - 9);
     ctx.textAlign = "center";
   }
 
@@ -281,7 +300,8 @@ export function initDemo() {
 
   function stop() {
     on = false; cancelAnimationFrame(raf);
-    cv.hidden = true; panel.hidden = true;
+    cv.hidden = true; panel.hidden = true; fullBtn.hidden = true;
+    if (document.fullscreenElement) document.exitFullscreen();
     btn.setAttribute("aria-pressed", false); btn.textContent = "Demo view";
   }
 
@@ -290,7 +310,8 @@ export function initDemo() {
     S.stopDemo = stop;
     on = true; reset();
     btn.setAttribute("aria-pressed", true); btn.textContent = "Demo view: on";
-    feed.hidden = true; rtc.hidden = true; ph.hidden = true; cv.hidden = false; panel.hidden = false;
+    feed.hidden = true; rtc.hidden = true; ph.hidden = true; cv.hidden = false; panel.hidden = false; fullBtn.hidden = false;
+    fit();
     setStatus("demo", "Demo", "Simulated mission. Bob isn't connected. Drive with the arrow keys.");
     loop(); cv.focus({ preventScroll: true });
   }
@@ -305,7 +326,19 @@ export function initDemo() {
     if (c) { COMMANDS[c.dataset.cmd](); cv.focus({ preventScroll: true }); }
   });
 
-  cv.addEventListener("keydown", (e) => { if (e.key.startsWith("Arrow")) { keys[e.key] = true; e.preventDefault(); } });
+  const SHORTCUTS = { "1": "fire", "2": "survivor", "3": "base", "0": "stop", " ": "stop", r: "reset", R: "reset" };
+  cv.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.startsWith("Arrow")) { keys[e.key] = true; e.preventDefault(); }
+    else if (SHORTCUTS[e.key]) { if (!e.repeat) COMMANDS[SHORTCUTS[e.key]](); e.preventDefault(); }
+    else if (e.key === "f" || e.key === "F") { $("full").click(); e.preventDefault(); }
+  });
+  if ("ResizeObserver" in window) new ResizeObserver(fit).observe(cv);
+  fullBtn.addEventListener("click", () => { $("full").click(); cv.focus({ preventScroll: true }); });
+  document.addEventListener("fullscreenchange", () => {
+    fullBtn.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+    if (on) cv.focus({ preventScroll: true });
+  });
   cv.addEventListener("keyup", (e) => { delete keys[e.key]; });
   cv.addEventListener("blur", () => { keys = {}; });
   panel.querySelectorAll("[data-key]").forEach((b) => {

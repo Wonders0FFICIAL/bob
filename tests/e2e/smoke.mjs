@@ -151,6 +151,19 @@ async function newPage(ctxOpts = {}) {
 }
 
 {
+  const { ctx, page, problems } = await newPage();
+  await page.goto(base + "/");
+  await page.click("#demobtn");
+  check(await page.isVisible("#demofull"), "demo view shows its full screen button");
+  await page.keyboard.press("1");
+  check(/fire reported/.test(await page.textContent("#demolog")), "keyboard shortcut 1 reports a fire");
+  await page.keyboard.press("r");
+  check(!/fire reported/.test(await page.textContent("#demolog")), "R resets the demo");
+  check(problems.pageErrors.length === 0, "no page errors in the demo " + problems.pageErrors.join(" | "));
+  await ctx.close();
+}
+
+{
   const { ctx, page, problems } = await newPage({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
   await page.goto(base + "/");
   await page.waitForSelector("#connect");
@@ -180,6 +193,13 @@ async function newPage(ctxOpts = {}) {
     await page.click('input[value="charcoal"]');
     check(/All dark/.test(await page.textContent(".bob3d-scheme-note")), "colour scheme note updates");
     await page.focus(".bob3d-canvas");
+    await page.keyboard.press("t");
+    check((await page.textContent('[data-act="tour"]')) === "Stop tour", "T starts the tour");
+    await page.keyboard.press("2");
+    check((await page.textContent('[data-act="tour"]')) === "Tour", "picking a part stops the tour");
+    check((await page.textContent(".bob3d-title")) === "Camera eye", "number key 2 picks the second part");
+    await page.keyboard.press("r");
+    check((await page.getAttribute('[data-part="eye"]', "aria-pressed")) === "false", "R resets the selection");
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("+");
     check(true, "keyboard rotate and zoom run without errors");
