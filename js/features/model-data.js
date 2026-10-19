@@ -1,21 +1,27 @@
-export const ROLES = ["shell", "plate", "frame", "hangar", "wheel", "steel", "accent", "tape", "lettering", "dark", "glass", "screen", "headlight", "taillight", "beacon"];
+export const ROLES = ["shell", "plate", "frame", "hangar", "wheel", "steel", "accent", "tape", "lettering", "dark", "glass", "screen", "headlight", "taillight", "beacon", "battery", "pcb", "packet1", "packet2", "packet3"];
 
-export function roleOf(label) {
+export function roleOf(name) {
+  const label = name.replace(/^Pip /, "");
   if (/^Reflective tape/.test(label)) return "tape";
   if (/^BOB lettering/.test(label)) return "lettering";
   if (/^Outer shell/.test(label)) return "shell";
-  if (/^(Fender|Hangar door|Eye ring|Payload trapdoor)/.test(label)) return "accent";
+  if (/^(Fender|Hangar door|Eye ring|Payload trapdoor|Duct)/.test(label)) return "accent";
   if (/^(Lower plate|Upper plate)/.test(label)) return "plate";
-  if (/^(Electronics bay|Payload compartment)/.test(label)) return "frame";
+  if (/^(Electronics bay|Payload compartment|Frame|Standoff|Arm |Dispenser guard)/.test(label)) return "frame";
   if (/^Drone hangar/.test(label)) return "hangar";
   if (/^Tyre/.test(label)) return "wheel";
-  if (/^(Hub|Axle|Shock|Payload chute)/.test(label)) return "steel";
-  if (/^(Eye window)/.test(label)) return "glass";
+  if (/^(Hub|Axle|Shock|Payload chute|Motor (front|rear)|Dispenser drum|Servo shaft)/.test(label)) return "steel";
+  if (/^(Eye window|Camera lens)/.test(label)) return "glass";
   if (/^LCD screen/.test(label)) return "screen";
-  if (/^Headlight/.test(label)) return "headlight";
-  if (/^Tail light/.test(label)) return "taillight";
-  if (/^Roof beacon/.test(label)) return "beacon";
-  if (/^(ESP32-CAM|LCD 16x2|Micro drone|Drone |LiPo|Arduino|ESC |3A regulator)/.test(label)) return "dark";
+  if (/^(Headlight|Front light|Belly light)/.test(label)) return "headlight";
+  if (/^(Tail light|Rear light)/.test(label)) return "taillight";
+  if (/^(Roof beacon|Beacon)/.test(label)) return "beacon";
+  if (/^LiPo/.test(label)) return "battery";
+  if (/^(Flight controller|Arduino|3A regulator)/.test(label)) return "pcb";
+  if (/^Packet 1/.test(label)) return "packet1";
+  if (/^Packet 2/.test(label)) return "packet2";
+  if (/^Packet 3/.test(label)) return "packet3";
+  if (/^(ESP32-CAM|LCD 16x2|ESC |Motor mount|Propeller|Camera module|Thermal|Antenna|Dispenser servo)/.test(label)) return "dark";
   return null;
 }
 
@@ -66,8 +72,8 @@ export const GROUPS = [
     id: "hangar",
     view: { azimuth: 0.9, polar: 0.85 },
     title: "Drone hangar",
-    text: "Design plan: a micro-drone launches from the roof to scout over obstacles and high spots. The clamshell doors open on servos.",
-    match: /^(Drone hangar|Hangar door|Micro drone|Drone )/,
+    text: "Design plan: Pip, a micro-drone, launches from the roof to scout over obstacles and high spots. The clamshell doors open on servos. Use Launch Pip to watch it lift off, or View Pip to look at it on its own.",
+    match: /^(Drone hangar|Hangar door|Pip )/,
   },
   {
     id: "payload",
@@ -85,11 +91,54 @@ export const GROUPS = [
   },
 ];
 
+export const PIP_GROUPS = [
+  {
+    id: "pip-cameras",
+    title: "Cameras",
+    view: { azimuth: 1.4, polar: 1.3 },
+    text: "Design plan: a main camera and a thermal camera share a small pod at the front, tilted up 10 degrees. The thermal one shows heat from people and fire through smoke.",
+    match: /^(Camera|Thermal)/,
+  },
+  {
+    id: "pip-lights",
+    title: "Lights",
+    view: { azimuth: 0.9, polar: 1.2 },
+    text: "Design plan: two white front lights, a belly light to help it land, red rear lights and an amber beacon on top so Bob and the crew can see where it is.",
+    match: /^(Front light|Belly light|Rear light|Beacon)/,
+  },
+  {
+    id: "pip-dispenser",
+    title: "Packet dispenser",
+    view: { azimuth: 2.4, polar: 1.45 },
+    text: "Design plan: a rotating drum under the body holds three small packets and drops them one at a time, for example a first-aid tablet, a glow stick or a tracking tag. Pip is too small to carry water or put out a fire.",
+    match: /^(Dispenser|Packet|Servo)/,
+  },
+  {
+    id: "pip-rings",
+    title: "Rings and motors",
+    view: { azimuth: 2.2, polar: 1.1 },
+    text: "Each propeller spins inside its own ring, so a bump against a wall or a person does not break it. Four small brushless motors lift Pip. Try Spin props.",
+    match: /^(Duct|Propeller|Motor)/,
+  },
+  {
+    id: "pip-frame",
+    title: "Frame and electronics",
+    view: { azimuth: 2.6, polar: 0.95 },
+    text: "Two plates hold the battery, the flight controller and the antenna. The parts shown are stand-ins until the real ones are chosen.",
+    match: /^(Frame|Standoff|Arm|LiPo|Flight|Antenna)/,
+  },
+];
+
 export function namesIn(group, allNames) {
   return allNames.filter((n) => group.match.test(n));
 }
 
 const SHARED = {
+  battery: { color: "#3B6FD4", roughness: 0.5, metalness: 0 },
+  pcb: { color: "#1C6B45", roughness: 0.5, metalness: 0 },
+  packet1: { color: "#E5322D", roughness: 0.5, metalness: 0 },
+  packet2: { color: "#F4C20D", roughness: 0.5, metalness: 0 },
+  packet3: { color: "#2FB36B", roughness: 0.5, metalness: 0 },
   tape: { color: "#F4F7F8", roughness: 0.35, metalness: 0, emissive: "#FFFFFF", emissiveIntensity: 0.12 },
   lettering: { color: "#F3F6F8", roughness: 0.5, metalness: 0 },
   dark: { color: "#0D1418", roughness: 0.6, metalness: 0 },

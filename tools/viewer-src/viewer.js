@@ -28,7 +28,7 @@ function mergeFaces(root) {
   root.updateMatrixWorld(true);
   const groups = new Map();
   root.traverse((o) => {
-    if (!o.isMesh || !o.parent || o.parent === root || o.parent.isScene) return;
+    if (!o.isMesh || !o.parent || o.parent === root || o.parent.isScene || o.parent.parent === root) return;
     if (!groups.has(o.parent)) groups.set(o.parent, []);
     groups.get(o.parent).push(o);
   });
@@ -59,7 +59,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new Scene();
-  const camera = new PerspectiveCamera(32, 1, 0.05, 20);
+  const camera = new PerspectiveCamera(32, 1, 0.02, 20);
   const hemi = new HemisphereLight(0xffffff, 0x8a98a5, 1.55);
   const sun = new DirectionalLight(0xffffff, 2.1);
   sun.position.set(0.8, 1.6, 1.1);
@@ -75,30 +75,44 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
   shadow.material.emissive = new Color(0x000000);
   scene.add(shadow);
 
-  const gltf = await new GLTFLoader().loadAsync(modelUrl);
-  const model = gltf.scene;
-  mergeFaces(model);
-  scene.add(model);
-
-  const box = new Box3().setFromObject(model);
-  const center = box.getCenter(new Vector3());
-  model.position.x -= center.x;
-  model.position.z -= center.z;
-  model.position.y -= box.min.y;
-  const size = box.getSize(new Vector3());
-  const target = new Vector3(0, size.y * 0.42, 0);
-
   const parts = new Map();
   const labelOf = (name) => name.replace(/_/g, " ");
-  model.traverse((o) => {
-    if (!o.isMesh) return;
-    o.material = o.material.clone();
-    o.material.userData.base = { emissive: new Color(0x000000), intensity: 0 };
-    const holder = o.parent && o.parent.name && !/^Bob_v\d+$/.test(o.parent.name) && !o.parent.isScene ? o.parent : o;
-    const label = labelOf(holder.name || o.name);
-    if (!parts.has(label)) parts.set(label, { node: holder, meshes: [] });
-    parts.get(label).meshes.push(o);
-  });
+  const models = {};
+  const loader = new GLTFLoader();
+  let active = "bob";
+
+  async function loadModel(key, url) {
+    const gltf = await loader.loadAsync(url);
+    const root = gltf.scene;
+    mergeFaces(root);
+    root.visible = key === "bob";
+    scene.add(root);
+    const box = new Box3().setFromObject(root);
+    const center = box.getCenter(new Vector3());
+    root.position.x -= center.x;
+    root.position.z -= center.z;
+    root.position.y -= box.min.y;
+    const size = box.getSize(new Vector3());
+    const names = [];
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      o.material = o.material.clone();
+      o.material.userData.base = { emissive: new Color(0x000000), intensity: 0 };
+      const holder = o.parent && o.parent.name && o.parent.parent !== root ? o.parent : o;
+      const label = labelOf(holder.name || o.name);
+      if (!parts.has(label)) {
+        parts.set(label, { node: holder, meshes: [] });
+        names.push(label);
+      }
+      parts.get(label).meshes.push(o);
+    });
+    models[key] = { root, size, names, target: new Vector3(0, size.y * 0.42, 0), k: 1 };
+    return models[key];
+  }
+
+  const bob = await loadModel("bob", modelUrl);
+  const model = bob.root;
+  const flights = {};
 
   const controls = new OrbitControls(camera, canvas);
   controls.enablePan = false;
@@ -107,7 +121,7 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
   controls.dampingFactor = 0.09;
   controls.minPolarAngle = 0.35;
   controls.maxPolarAngle = 1.52;
-  controls.target.copy(target);
+  controls.target.copy(bob.target);
   controls.rotateSpeed = 0.7;
   canvas.style.touchAction = "pan-y";
 
@@ -153,6 +167,33 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
     pivot.add(door);
     door.position.sub(hinge);
     doors.push({ pivot, sy });
+  }
+
+  function prepFlight(key) {
+    const m = models[key];
+    const list = key === "bob" ? m.names.filter((n) => n.startsWith("Pip ")) : m.names;
+    const first = parts.get(list[0]).node;
+    const parent = first.parent;
+    const lift = new Group();
+    parent.add(lift);
+    m.root.updateMatrixWorld(true);
+    const props = [];
+    for (const n of list) {
+      const node = parts.get(n).node;
+      if (/Propeller/.test(n)) {
+        const wb = new Box3().setFromObject(node);
+        const c = lift.worldToLocal(wb.getCenter(new Vector3()));
+        const pivot = new Group();
+        pivot.position.copy(c);
+        lift.add(pivot);
+        pivot.add(node);
+        node.position.sub(c);
+        props.push(pivot);
+      } else {
+        lift.add(node);
+      }
+    }
+    return { lift, props, t: 0, launch: false, spin: false, height: key === "bob" ? 0.15 : 0.03, k: m.k };
   }
 
   function readOrbit() {
@@ -206,6 +247,23 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
       doorsOpen = doorsGoal;
       for (const d of doors) d.pivot.rotation.x = -d.sy * DOOR_OPEN_RAD * doorsOpen;
       busy = true;
+    }
+
+    for (const f of Object.values(flights)) {
+      const goal = f.launch ? 1 : 0;
+      if (Math.abs(goal - f.t) > 0.001) {
+        f.t += (goal - f.t) * Math.min(1, dt * (calm ? 60 : 3.2));
+        busy = true;
+      } else {
+        f.t = goal;
+      }
+      const hover = f.launch && !calm ? Math.sin(now / 420) * 0.004 * f.k : 0;
+      f.lift.position.z = f.height * f.t + hover;
+      if (f.spin && !calm) {
+        for (const p of f.props) p.rotation.z += dt * 38;
+        busy = true;
+      }
+      if (f.launch && !calm) busy = true;
     }
 
     if (pulse) {
@@ -263,7 +321,9 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
   }
 
   const api = {
-    names: () => [...parts.keys()],
+    names: () => (models[active] ? models[active].names : []),
+    hasPip: () => !!models.pip,
+    mode: () => active,
     stats: () => ({ calls: renderer.info.render.calls, triangles: renderer.info.render.triangles }),
     setMaterial(names, { color, roughness, metalness, emissive, emissiveIntensity }) {
       for (const n of names) {
@@ -300,20 +360,41 @@ export async function createViewer({ canvas, modelUrl, calm = false }) {
       if (b.isEmpty()) return;
       const c = b.getCenter(new Vector3());
       const sz = b.getSize(new Vector3()).length();
-      flyTo(c, view ? view.azimuth : Math.atan2(camera.position.x - c.x, camera.position.z - c.z), view ? view.polar : 1.15, Math.max(0.62, sz * 2.4 + 0.25));
+      flyTo(c, view ? view.azimuth : Math.atan2(camera.position.x - c.x, camera.position.z - c.z), view ? view.polar : 1.15, Math.max(0.62, sz * 2.4 + 0.25) * models[active].k);
     },
     resetView() {
-      flyTo(target.clone(), HOME.azimuth, HOME.polar, HOME.distance, 800);
+      flyTo(models[active].target.clone(), HOME.azimuth, HOME.polar, HOME.distance * models[active].k, 800);
     },
     zoom(factor) {
       readOrbit();
-      const to = MathUtils.clamp(sph.distance * factor, 0.35, 1.6);
+      const k = models[active].k;
+      const to = MathUtils.clamp(sph.distance * factor, 0.35 * k, 1.6 * k);
       flyTo(controls.target.clone(), sph.azimuth, sph.polar, to, 220, true);
     },
     rotate(dAz, dPol) {
       readOrbit();
       const pol = MathUtils.clamp(sph.polar + dPol, 0.35, 1.52);
       flyTo(controls.target.clone(), sph.azimuth + dAz, pol, sph.distance, 200, true);
+    },
+    async loadPip(url) {
+      if (models.pip) return;
+      const m = await loadModel("pip", url);
+      m.k = m.size.x / models.bob.size.x;
+    },
+    setMode(mode) {
+      if (!models[mode]) return;
+      active = mode;
+      for (const [key, m] of Object.entries(models)) m.root.visible = key === mode;
+      shadow.scale.setScalar(models[mode].k);
+      flyTo(models[mode].target.clone(), HOME.azimuth, HOME.polar, HOME.distance * models[mode].k, 900);
+    },
+    setFlight(on) {
+      const key = active;
+      if (!flights[key]) flights[key] = prepFlight(key);
+      const f = flights[key];
+      f.launch = on;
+      f.spin = on;
+      wake();
     },
     setDoorsOpen(open) {
       doorsGoal = open ? 1 : 0;

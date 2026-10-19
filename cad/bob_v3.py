@@ -164,13 +164,6 @@ for sy, name in ((1, "left"), (-1, "right")):
     door = Pos((HX0 + HX1) / 2, sy * HW / 2, door_z) * Rot(-sy * HANGAR_OPEN_DEG, 0, 0) * Pos(0, -sy * door_w / 2, 0) * Box(HX1 - HX0, door_w - 0.6, 3)
     add(door, f"Hangar door {name}", ORANGE)
 
-dz = z0 + 2
-add(box(60, 60, 20, 5, 0, dz), "Micro drone body (stand-in)", CHARCOAL_DARK)
-for ax_ in (-1, 1):
-    for ay in (-1, 1):
-        add(Pos(5 + ax_ * 45, ay * 45, dz + 22) * Cylinder(22, 2), f"Drone rotor {ax_}{ay}", AMBER)
-        add(box(8, 8, 16, 5 + ax_ * 45, ay * 45, dz + 4), f"Drone arm {ax_}{ay}", CHARCOAL_DARK)
-
 add(box(120, 45, 28, 60, 0, LOWER_Z + PLATE_T + WALL), "LiPo battery (stand-in)", BATTERY)
 add(box(70, 54, 14, -60, 0, LOWER_Z + PLATE_T + WALL), "Arduino (stand-in)", PCB)
 for sy in (-1, 1):
@@ -240,6 +233,17 @@ def baked(parts_in):
         q.color = p.color
         out.append(q)
     return out
+
+
+import drone_pip
+
+PIP_X = (HX0 + HX1) / 2
+PIP_Z = z0 + WALL
+for p in drone_pip.build():
+    q = Pos(PIP_X, 0, PIP_Z) * p
+    q.label = "Pip " + p.label
+    q.color = p.color
+    parts.append(q)
 
 
 WEB = "--web" in sys.argv

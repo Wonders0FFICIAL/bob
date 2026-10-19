@@ -1,6 +1,7 @@
-import { GROUPS, SCHEMES, DEFAULT_SCHEME, namesIn, materialFor } from "./model-data.js";
+import { GROUPS, PIP_GROUPS, SCHEMES, DEFAULT_SCHEME, namesIn, materialFor } from "./model-data.js";
 
 const MODEL_URL = "models/bob-v3.glb";
+const PIP_URL = "models/pip.glb";
 const FALLBACK = "Your browser can't show the 3D model, so here is a picture instead.";
 
 function hasWebGL() {
@@ -29,18 +30,29 @@ export function initModel() {
   const shellBtn = root.querySelector('[data-act="shell"]');
   const tourBtn = root.querySelector('[data-act="tour"]');
   const fullBtn = root.querySelector('[data-act="full"]');
+  const flyBtn = root.querySelector('[data-act="fly"]');
+  const modeBtns = [...root.querySelectorAll("[data-mode]")];
+  const partSets = [...root.querySelectorAll("[data-set]")];
   const resetBtn = root.querySelector('[data-act="reset"]');
   const zoomIn = root.querySelector('[data-act="zoom-in"]');
   const zoomOut = root.querySelector('[data-act="zoom-out"]');
-  const actionBtns = [doorsBtn, lightsBtn, shellBtn, tourBtn, fullBtn, resetBtn, zoomIn, zoomOut];
+  const actionBtns = [doorsBtn, lightsBtn, shellBtn, tourBtn, fullBtn, flyBtn, ...modeBtns, resetBtn, zoomIn, zoomOut];
 
   const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const intro = { title: title.textContent, text: text.textContent };
+  const intros = {
+    bob: { title: title.textContent, text: text.textContent },
+    pip: { title: "Pip", text: "Pip is Bob's micro-drone. It is a design plan and is not built yet. Drag to turn it, or pick a part to zoom in on it." },
+  };
 
   let viewer = null;
   let loading = false;
   let names = [];
   let selected = null;
+  let mode = "bob";
+  let switching = false;
+  let flying = false;
+  let flyTimer = 0;
+  const visibleParts = () => partBtns.filter((b) => (mode === "pip") === b.dataset.part.startsWith("pip-"));
   let lightsOff = false;
   let schemeId = DEFAULT_SCHEME;
 
@@ -75,17 +87,17 @@ export function initModel() {
   function select(id) {
     selected = id;
     for (const b of partBtns) b.setAttribute("aria-pressed", String(b.dataset.part === id));
-    const g = GROUPS.find((x) => x.id === id);
+    const g = [...GROUPS, ...PIP_GROUPS].find((x) => x.id === id);
     if (!g) {
-      title.textContent = intro.title;
-      text.textContent = intro.text;
+      title.textContent = intros[mode].title;
+      text.textContent = intros[mode].text;
       viewer.highlight(null);
       return;
     }
     title.textContent = g.title;
     text.textContent = g.text;
     const list = namesIn(g, names);
-    setShell(INSIDE.includes(id));
+    if (mode === "bob") setShell(INSIDE.includes(id));
     viewer.highlight(list);
     viewer.focus(list, g.view);
     if (id === "hangar" && doorsBtn.getAttribute("aria-pressed") !== "true") toggleDoors(true);
@@ -93,6 +105,7 @@ export function initModel() {
 
   function toggleDoors(force) {
     const open = typeof force === "boolean" ? force : doorsBtn.getAttribute("aria-pressed") !== "true";
+    if (!open && flying) stopFly();
     doorsBtn.setAttribute("aria-pressed", String(open));
     doorsBtn.textContent = open ? "Close hangar" : "Open hangar";
     viewer.setDoorsOpen(open);
@@ -128,7 +141,8 @@ export function initModel() {
   }
 
   function tourStep() {
-    const id = partBtns[tourIndex % partBtns.length].dataset.part;
+    const list = visibleParts();
+    const id = list[tourIndex % list.length].dataset.part;
     tourIndex++;
     select(id);
     tourTimer = setTimeout(tourStep, calm ? 6000 : 4800);
@@ -145,16 +159,77 @@ export function initModel() {
     tourStep();
   }
 
+  function flyUi(on) {
+    flying = on;
+    flyBtn.setAttribute("aria-pressed", String(on));
+    flyBtn.textContent = mode === "pip" ? (on ? "Stop props" : "Spin props") : on ? "Land Pip" : "Launch Pip";
+  }
+
+  function stopFly() {
+    clearTimeout(flyTimer);
+    flyTimer = 0;
+    if (flying) viewer.setFlight(false);
+    flyUi(false);
+  }
+
+  function toggleFly() {
+    if (flying) {
+      stopFly();
+      return;
+    }
+    flyUi(true);
+    if (mode === "bob" && doorsBtn.getAttribute("aria-pressed") !== "true") {
+      toggleDoors(true);
+      flyTimer = setTimeout(() => { if (flying) viewer.setFlight(true); }, calm ? 0 : 650);
+    } else {
+      viewer.setFlight(true);
+    }
+  }
+
+  async function setMode(next) {
+    if (next === mode || switching) return;
+    switching = true;
+    stopTour();
+    if (next === "pip" && !viewer.hasPip()) {
+      msg.textContent = "Loading Pip…";
+      msg.hidden = false;
+      try {
+        await viewer.loadPip(PIP_URL);
+      } catch (e) {
+        console.error("Pip failed to load:", e);
+        msg.textContent = "Couldn't load Pip. Try again in a moment.";
+        switching = false;
+        return;
+      }
+      msg.hidden = true;
+    }
+    stopFly();
+    mode = next;
+    viewer.highlight(null);
+    viewer.setMode(next);
+    names = viewer.names();
+    applyScheme(schemeId);
+    for (const b of modeBtns) b.setAttribute("aria-pressed", String(b.dataset.mode === next));
+    for (const set of partSets) set.hidden = set.dataset.set !== next;
+    doorsBtn.hidden = next === "pip";
+    shellBtn.hidden = next === "pip";
+    flyUi(false);
+    select(null);
+    switching = false;
+  }
+
   function toggleFull() {
     if (document.fullscreenElement) document.exitFullscreen();
     else if (root.requestFullscreen) root.requestFullscreen();
   }
 
-  const KEYS = { o: () => toggleDoors(), h: toggleShell, l: toggleLights, t: toggleTour, f: toggleFull, r: () => { stopTour(); select(null); viewer.resetView(); } };
+  const KEYS = { o: () => mode === "bob" && toggleDoors(), h: () => mode === "bob" && toggleShell(), p: () => setMode(mode === "bob" ? "pip" : "bob"), g: toggleFly, l: toggleLights, t: toggleTour, f: toggleFull, r: () => { stopTour(); select(null); viewer.resetView(); } };
 
   function wire() {
     shellBtn.addEventListener("click", () => { stopTour(); toggleShell(); });
     tourBtn.addEventListener("click", toggleTour);
+    flyBtn.addEventListener("click", toggleFly);
+    for (const b of modeBtns) b.addEventListener("click", () => setMode(b.dataset.mode));
     fullBtn.addEventListener("click", toggleFull);
     canvas.addEventListener("pointerdown", stopTour);
     document.addEventListener("fullscreenchange", () => {
@@ -177,9 +252,9 @@ export function initModel() {
       if (!e.ctrlKey && !e.metaKey && !e.altKey) {
         const k = e.key.toLowerCase();
         if (KEYS[k]) { if (!e.repeat) KEYS[k](); e.preventDefault(); return; }
-        if (/^[1-9]$/.test(e.key) && partBtns[Number(e.key) - 1]) {
+        if (/^[1-9]$/.test(e.key) && visibleParts()[Number(e.key) - 1]) {
           stopTour();
-          if (!e.repeat) partBtns[Number(e.key) - 1].click();
+          if (!e.repeat) visibleParts()[Number(e.key) - 1].click();
           e.preventDefault();
           return;
         }
