@@ -8,11 +8,11 @@ test.before(async () => {
   data = await import("../js/features/model-data.js");
 });
 
-function glbPartLabels() {
-  const buf = fs.readFileSync(path.join(__dirname, "..", "models", "bob-v3.glb"));
+function glbPartLabels(file = "bob-v3.glb") {
+  const buf = fs.readFileSync(path.join(__dirname, "..", "models", file));
   const jsonLen = buf.readUInt32LE(12);
   const json = JSON.parse(buf.slice(20, 20 + jsonLen).toString("utf8"));
-  return json.nodes.map((n) => n.name).filter((n) => n && n !== "Bob v3");
+  return json.nodes.map((n) => n.name).filter((n) => n && n !== "Bob v3" && n !== "Pip");
 }
 
 test("every part in the model has a colour role", () => {
@@ -54,7 +54,27 @@ test("the default scheme exists and the accent differs from the shell in every s
   }
 });
 
-test("the web model stays small", () => {
-  const size = fs.statSync(path.join(__dirname, "..", "models", "bob-v3.glb")).size;
-  assert.ok(size < 1024 * 1024, "model is " + size + " bytes");
+test("the web models stay small", () => {
+  for (const f of ["bob-v3.glb", "pip.glb"]) {
+    const size = fs.statSync(path.join(__dirname, "..", "models", f)).size;
+    assert.ok(size < 1024 * 1024, f + " is " + size + " bytes");
+  }
+});
+
+test("Pip parked in the hangar is part of the hangar group", () => {
+  const pips = glbPartLabels().filter((l) => l.startsWith("Pip "));
+  assert.ok(pips.length > 30);
+  const hangar = data.GROUPS.find((g) => g.id === "hangar");
+  for (const l of pips) assert.ok(hangar.match.test(l), l + " is not in the hangar group");
+});
+
+test("every Pip part has a colour role and exactly one Pip group", () => {
+  const labels = glbPartLabels("pip.glb");
+  assert.ok(labels.length > 30);
+  for (const l of labels) {
+    assert.ok(data.roleOf(l), "no role for " + l);
+    const hits = data.PIP_GROUPS.filter((g) => g.match.test(l));
+    assert.equal(hits.length, 1, l + " matches " + hits.length + " Pip groups");
+  }
+  for (const g of data.PIP_GROUPS) assert.ok(labels.some((l) => g.match.test(l)), g.id + " finds nothing");
 });
