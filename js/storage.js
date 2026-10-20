@@ -55,4 +55,7 @@ export const KEYS = {
   mode: "bob-mode",
   theme: "bob-theme",
   quality: "bob-cam-quality",
+  pipHold: "bob-pip-hold",
+  inset: "bob-demo-inset",
+  palette: "bob-thermal",
 };

@@ -45,7 +45,7 @@ const base = "http://localhost:" + server.address().port;
 const failures = [];
 const check = (ok, label) => { console.log((ok ? "ok   " : "FAIL ") + label); if (!ok) failures.push(label); };
 
-const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || undefined, args: [...(process.env.CHROMIUM_ARGS ? process.env.CHROMIUM_ARGS.split(" ") : []), "--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 
 let visitor = 0;
 async function newPage(ctxOpts = {}) {
@@ -159,6 +159,45 @@ async function newPage(ctxOpts = {}) {
   check(/fire reported/.test(await page.textContent("#demolog")), "keyboard shortcut 1 reports a fire");
   await page.keyboard.press("r");
   check(!/fire reported/.test(await page.textContent("#demolog")), "R resets the demo");
+  await page.keyboard.press("v");
+  check((await page.getAttribute('[data-view="bob"]', "aria-pressed")) === "true", "V switches to Bob's view");
+  check(await page.isEnabled('[data-view="pip"]'), "Pip's view is always available");
+  await page.keyboard.press("v");
+  check((await page.getAttribute('[data-view="pip"]', "aria-pressed")) === "true", "V reaches Pip's view even while Pip is docked");
+  await page.keyboard.press("4");
+  check(/Pip launched/.test(await page.textContent("#demolog")), "keyboard shortcut 4 launches Pip");
+  check((await page.textContent('[data-cmd="pip"]')).startsWith("Recall Pip"), "the Pip button turns into Recall Pip");
+  check((await page.textContent('[data-cmd="pip"]')).includes("4"), "the Pip button keeps its key hint");
+  await page.keyboard.press("m");
+  check((await page.getAttribute('[data-view="map"]', "aria-pressed")) === "true", "M shows the map");
+  await page.keyboard.press("i");
+  check((await page.getAttribute('[data-cmd="inset"]', "aria-checked")) === "false", "I turns the inset off");
+  check((await page.evaluate(() => localStorage.getItem("bob-demo-inset"))) === "0", "the inset choice is remembered");
+  await page.keyboard.press("i");
+  await page.keyboard.press("c");
+  check(/White hot/.test(await page.textContent('[data-cmd="palette"]')), "C changes the thermal palette");
+  await page.keyboard.press("t");
+  await page.keyboard.press("+");
+  await page.keyboard.press("h");
+  await page.keyboard.press("h");
+  await page.keyboard.press("p");
+  check((await page.getAttribute('[data-cmd="piphold"]', "aria-checked")) === "true", "P keeps Pip out");
+  check((await page.evaluate(() => localStorage.getItem("bob-pip-hold"))) === "1", "keeping Pip out is remembered");
+  await page.keyboard.press("4");
+  check((await page.getAttribute('[data-cmd="piphold"]', "aria-checked")) === "false", "recalling Pip turns the keep-out switch off");
+  await page.keyboard.press("p");
+  await page.keyboard.press("r");
+  check(/Pip launched/.test(await page.textContent("#demolog")), "a kept-out Pip launches again after reset");
+  await page.keyboard.down("w");
+  await page.keyboard.down("Shift");
+  await page.waitForTimeout(300);
+  await page.keyboard.up("Shift");
+  await page.keyboard.up("w");
+  await page.keyboard.press("m");
+  const box = await page.evaluate(() => { const r = document.querySelector("#demo").getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; });
+  await page.mouse.click(box.x + box.w * 0.65, box.y + box.h * 0.12);
+  check(/marked position/.test(await page.textContent("#demolog")), "clicking the map sends Bob there");
+  await page.keyboard.press("p");
   check(problems.pageErrors.length === 0, "no page errors in the demo " + problems.pageErrors.join(" | "));
   await ctx.close();
 }
@@ -203,6 +242,16 @@ async function newPage(ctxOpts = {}) {
     await page.keyboard.press("ArrowLeft");
     await page.keyboard.press("+");
     check(true, "keyboard rotate and zoom run without errors");
+    await page.click('[data-mode="pip"]');
+    await page.waitForFunction(() => document.querySelector('[data-set="pip"]').hidden === false, null, { timeout: 20000 });
+    check((await page.isHidden('[data-part="eye"]')) && (await page.isVisible('[data-part="pip-cameras"]')), "Pip mode shows the Pip parts only");
+    await page.click('[data-part="pip-dispenser"]');
+    check((await page.getAttribute('[data-part="pip-dispenser"]', "aria-pressed")) === "true", "a Pip part can be picked");
+    await page.click('[data-act="fly"]');
+    check((await page.getAttribute('[data-act="fly"]', "aria-pressed")) === "true", "Spin props toggles");
+    await page.click('[data-mode="bob"]');
+    await page.waitForFunction(() => document.querySelector('[data-set="bob"]').hidden === false);
+    check(await page.isVisible('[data-act="doors"]'), "back in Bob mode the hangar button returns");
   }
   check(problems.csp.length === 0, "no CSP violations from the 3D viewer " + problems.csp.join(" | "));
   check(problems.pageErrors.length === 0, "no page errors from the 3D viewer " + problems.pageErrors.join(" | "));

@@ -67,7 +67,7 @@
         <div class="screen">
           <video id="rtc" autoplay playsinline muted aria-label="Live camera feed from Bob" hidden></video>
           <img id="feed" alt="Live camera feed from Bob" hidden>
-          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo map. Use arrow keys to drive Bob, 1 to 3 for missions, 0 to stop, F for full screen." hidden></canvas>
+          <canvas id="demo" width="640" height="480" tabindex="0" aria-label="Demo mission. W A S D or arrow keys drive Bob, Shift sprints, 1 to 4 for missions, P keeps Pip out, V cycles views, I toggles the inset, C changes the thermal palette, H lists all keys, F full screen. Click the map to send Bob there." hidden></canvas>
           <button id="demofull" class="demofull" type="button" hidden>Full screen</button>
           <div id="placeholder" class="placeholder">
             <p><strong id="phtitle">Bob's eyes are closed</strong></p>
@@ -105,19 +105,47 @@
         </div>
 
         <div id="demopanel" class="demo" hidden>
-          <div class="demo-cmds">
-            <button data-cmd="fire">Report fire <kbd>1</kbd></button>
-            <button data-cmd="survivor">Survivor search <kbd>2</kbd></button>
-            <button data-cmd="base">Return to base <kbd>3</kbd></button>
-            <button data-cmd="stop">Stop <kbd>0</kbd></button>
-            <button data-cmd="reset" class="ghost">Reset <kbd>R</kbd></button>
-          </div>
-          <div class="demo-drive" role="group" aria-label="Manual drive">
-            <button data-key="ArrowLeft">Left</button>
-            <button data-key="ArrowUp">Forward</button>
-            <button data-key="ArrowDown">Back</button>
-            <button data-key="ArrowRight">Right</button>
-          </div>
+          <section class="demo-group demo-mission" aria-labelledby="dg-mission">
+            <h4 id="dg-mission">Mission</h4>
+            <div class="demo-cmds">
+              <button type="button" data-cmd="fire" class="danger"><span class="label">Report fire</span><kbd>1</kbd></button>
+              <button type="button" data-cmd="survivor"><span class="label">Survivor search</span><kbd>2</kbd></button>
+              <button type="button" data-cmd="base"><span class="label">Return to base</span><kbd>3</kbd></button>
+              <button type="button" data-cmd="stop"><span class="label">Stop</span><kbd>0</kbd></button>
+              <button type="button" data-cmd="reset" class="ghost"><span class="label">Reset</span><kbd>R</kbd></button>
+            </div>
+          </section>
+          <section class="demo-group demo-pip" aria-labelledby="dg-pip">
+            <h4 id="dg-pip">Pip drone <span class="demo-state" data-pip-state data-state="docked">Docked</span></h4>
+            <div class="demo-cmds demo-cmds-2">
+              <button type="button" data-cmd="pip" class="pip-btn" aria-pressed="false"><span class="label">Launch Pip</span><kbd>4</kbd></button>
+              <button type="button" data-cmd="piphold" class="switch" role="switch" aria-checked="false"><span class="track" aria-hidden="true"></span><span class="label">Keep Pip out</span><kbd>P</kbd></button>
+            </div>
+          </section>
+          <section class="demo-group demo-camera" aria-labelledby="dg-view">
+            <h4 id="dg-view">View</h4>
+            <div class="demo-views" role="group" aria-label="Camera view">
+              <button type="button" data-view="map" aria-pressed="true"><span class="label">Map</span><kbd>M</kbd></button>
+              <button type="button" data-view="bob" aria-pressed="false"><span class="label">Bob's view</span><kbd>B</kbd></button>
+              <button type="button" data-view="pip" aria-pressed="false" class="pip-btn"><span class="label">Pip's view</span><kbd>T</kbd></button>
+            </div>
+            <div class="demo-cmds demo-cmds-2">
+              <button type="button" data-cmd="inset" class="switch" role="switch" aria-checked="true"><span class="track" aria-hidden="true"></span><span class="label">Inset view</span><kbd>I</kbd></button>
+              <button type="button" data-cmd="swap" class="ghost"><span class="label">Swap views</span><kbd>X</kbd></button>
+              <button type="button" data-cmd="palette" class="ghost"><span class="label">Thermal: Iron</span><kbd>C</kbd></button>
+              <button type="button" data-cmd="help" class="ghost"><span class="label">All keys</span><kbd>H</kbd></button>
+            </div>
+          </section>
+          <section class="demo-group demo-driving" aria-labelledby="dg-drive">
+            <h4 id="dg-drive">Drive</h4>
+            <div class="demo-drive" role="group" aria-label="Manual drive">
+              <button type="button" data-key="ArrowUp" class="d-up" aria-label="Forward">&#9650;</button>
+              <button type="button" data-key="ArrowLeft" class="d-left" aria-label="Left">&#9664;</button>
+              <button type="button" data-key="ArrowDown" class="d-down" aria-label="Back">&#9660;</button>
+              <button type="button" data-key="ArrowRight" class="d-right" aria-label="Right">&#9654;</button>
+              <button type="button" data-key="Shift" class="d-boost"><span class="label">Sprint</span><kbd>Shift</kbd></button>
+            </div>
+          </section>
           <ol id="demolog" class="demolog" aria-live="polite" aria-label="Mission log"></ol>
         </div>
 
@@ -267,16 +295,21 @@
     <div class="bob3d" id="bob3d" data-state="idle">
       <div class="bob3d-stage">
         <img class="bob3d-poster" src="models/bob-v3-poster.webp" width="960" height="600" alt="Bob v3 concept model: a four-wheel-drive rover under a charcoal shell with orange fenders, a round camera eye and lights at the front and a drone hangar on the roof.">
-        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom, 1 to 9 to pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset."></canvas>
+        <canvas class="bob3d-canvas" tabindex="0" role="img" aria-label="Interactive 3D model of Bob. Drag or use the arrow keys to turn it, plus and minus to zoom, 1 to 9 to pick a part, P Bob or Pip, G launch Pip, O hangar, H shell, L lights, T tour, F full screen, R reset."></canvas>
         <p class="bob3d-msg" role="status">Loading 3D model…</p>
         <button class="bob3d-load" type="button" hidden>Load 3D model</button>
         <span class="bob3d-badge">Concept v3</span>
         <div class="bob3d-top">
+          <div class="bob3d-modes" role="group" aria-label="Model">
+            <button type="button" data-mode="bob" aria-pressed="true">Bob</button>
+            <button type="button" data-mode="pip" aria-pressed="false">Pip</button>
+          </div>
           <button type="button" data-act="tour" aria-pressed="false">Tour</button>
           <button type="button" data-act="full">Full screen</button>
         </div>
         <div class="bob3d-tools" role="group" aria-label="View controls">
           <button type="button" data-act="reset">Reset view</button>
+          <button type="button" data-act="fly" aria-pressed="false">Launch Pip</button>
           <button type="button" data-act="doors" aria-pressed="false">Open hangar</button>
           <button type="button" data-act="shell" aria-pressed="false">Hide shell</button>
           <button type="button" data-act="lights" aria-pressed="false">Lights off</button>
@@ -289,8 +322,8 @@
           <h3 class="bob3d-title">Bob v3</h3>
           <p class="bob3d-text">Drag to turn Bob around, or pick a part to zoom in on it. This is a concept model, so sizes may change when the real parts arrive. Parts marked Design plan are not built yet.</p>
         </div>
-        <p class="bob3d-keys">Keys: arrows turn, + and &minus; zoom, 1 to 9 pick a part, O hangar, H shell, L lights, T tour, F full screen, R reset.</p>
-        <div class="bob3d-parts" role="group" aria-label="Parts of Bob">
+        <p class="bob3d-keys">Keys: arrows turn, + and &minus; zoom, 1 to 9 pick a part, P Bob or Pip, G launch Pip, O hangar, H shell, L lights, T tour, F full screen, R reset.</p>
+        <div class="bob3d-parts" data-set="bob" role="group" aria-label="Parts of Bob">
           <button type="button" data-part="shell" aria-pressed="false">Protective shell</button>
           <button type="button" data-part="eye" aria-pressed="false">Camera eye</button>
           <button type="button" data-part="lights" aria-pressed="false">Lights and display</button>
@@ -300,6 +333,13 @@
           <button type="button" data-part="suspension" aria-pressed="false">Suspension</button>
           <button type="button" data-part="wheels" aria-pressed="false">Wheels and drive</button>
           <button type="button" data-part="tape" aria-pressed="false">Reflective tape</button>
+        </div>
+        <div class="bob3d-parts" data-set="pip" role="group" aria-label="Parts of Pip" hidden>
+          <button type="button" data-part="pip-cameras" aria-pressed="false">Cameras</button>
+          <button type="button" data-part="pip-lights" aria-pressed="false">Lights</button>
+          <button type="button" data-part="pip-dispenser" aria-pressed="false">Dispenser</button>
+          <button type="button" data-part="pip-rings" aria-pressed="false">Ducts and motors</button>
+          <button type="button" data-part="pip-frame" aria-pressed="false">Frame and battery</button>
         </div>
         <fieldset class="bob3d-colors">
           <legend>Colour scheme</legend>
