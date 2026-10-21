@@ -1,0 +1,82 @@
+.sc-page main { padding-bottom: 6vh; }
+
+.sc-hero { padding: 7vh 5vw 3vh; text-align: center; }
+.sc-kicker { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); }
+.sc-hero h1 { margin: 10px auto 0; max-width: 20ch; font-family: var(--display); font-weight: 900; font-size: clamp(1.7rem, 4.6vw, 3rem); line-height: 1.12; letter-spacing: -.02em; }
+.sc-hero .sub { max-width: 58ch; }
+
+.sc-pick, .sc-stage { width: min(1280px, 92vw); margin: 0 auto; }
+.sc-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 18px 0 26px; }
+.sc-card {
+  display: grid; gap: 4px; padding: 0 0 14px; text-align: left;
+  border: 2px solid var(--line); border-radius: 18px; background: var(--surface); color: var(--text);
+  overflow: hidden; cursor: pointer; transition: transform .18s, border-color .18s, box-shadow .18s;
+}
+.sc-card:hover { transform: translateY(-2px); }
+.sc-card[aria-pressed="true"] { border-color: var(--text); box-shadow: 0 8px 26px rgba(13, 28, 38, .18); }
+.sc-art { display: block; height: 96px; margin-bottom: 8px; background: var(--art); position: relative; }
+.sc-art::after { content: ""; position: absolute; inset: 0; background: var(--art-top); }
+.sc-card[data-scn="earthquake"] { --art: linear-gradient(135deg, #4A3427, #B3733F 70%, #FFB347); --art-top: linear-gradient(115deg, transparent 20%, rgba(0,0,0,.35) 20% 34%, transparent 34% 52%, rgba(0,0,0,.28) 52% 64%, transparent 64%); }
+.sc-card[data-scn="fire"] { --art: linear-gradient(135deg, #2B1013, #B3261E 65%, #FF8A1F); --art-top: radial-gradient(circle at 68% 82%, rgba(255,226,120,.95) 0 9%, rgba(255,138,31,.6) 10% 26%, transparent 40%); }
+.sc-card[data-scn="tunnel"] { --art: linear-gradient(135deg, #10212B, #2B5568 70%, #4FC3F7); --art-top: linear-gradient(90deg, rgba(0,0,0,.55) 0 38%, transparent 38% 44%, rgba(0,0,0,.55) 44% 52%, transparent 52%), linear-gradient(0deg, rgba(0,0,0,.4) 0 30%, transparent 30% 70%, rgba(0,0,0,.4) 70%); }
+.sc-name { padding: 0 16px; font-family: var(--display); font-weight: 800; font-size: 1.02rem; }
+.sc-tag { padding: 0 16px; font-size: .86rem; color: var(--mute); }
+
+.sc-stage { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(280px, 1fr); gap: 22px; align-items: start; }
+.sc-screen { position: sticky; top: 84px;  border-radius: 18px; overflow: hidden; background: #06090C; border: 2px solid var(--room-edge); }
+#scene { display: block; width: 100%; height: auto; aspect-ratio: 960 / 600; outline-offset: -4px; }
+.sc-corner { position: absolute; top: 10px; right: 10px; display: flex; gap: 8px; }
+.sc-page button { font: inherit; }
+.sc-corner button, .sc-btns button {
+  padding: 9px 14px; border: 1px solid rgba(255,255,255,.28); border-radius: 99px; background: rgba(5, 11, 16, .72); color: #fff; font-size: .85rem; font-weight: 700; cursor: pointer;
+}
+.sc-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sc-btns button { border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--text); padding: 11px 12px; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sc-btns button.primary { grid-column: 1 / -1; background: var(--text); color: var(--bg); border-color: var(--text); font-size: .98rem; }
+.sc-btns button.ghost { background: transparent; }
+.sc-btns button[aria-pressed="true"] { border-color: var(--ok); }
+.sc-btns button:disabled { opacity: .45; cursor: default; }
+.sc-btns kbd { font: 700 .72rem/1 var(--body); padding: 3px 6px; border-radius: 6px; background: rgba(127,127,127,.2); }
+.sc-corner button:focus-visible, .sc-btns button:focus-visible, .sc-card:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+
+.sc-side { display: grid; gap: 16px; }
+.sc-info { padding: 16px; border-radius: 14px; background: var(--card); }
+.sc-info h2 { font-family: var(--display); font-size: 1.05rem; margin-bottom: 6px; }
+.sc-info p { font-size: .95rem; }
+.sc-steps { list-style: none; counter-reset: s; display: grid; gap: 6px; }
+.sc-steps li { counter-increment: s; display: flex; gap: 10px; align-items: center; font-size: .9rem; color: var(--mute); }
+.sc-steps li::before { content: counter(s); flex: none; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; border: 2px solid var(--line); font-size: .72rem; font-weight: 700; }
+.sc-steps li.now { color: var(--text); font-weight: 700; }
+.sc-steps li.now::before { border-color: var(--amber); }
+.sc-steps li.done { color: var(--text); }
+.sc-steps li.done::before { content: "\2713"; background: var(--ok); border-color: var(--ok); color: #fff; }
+
+.sc-result { padding: 16px; border-radius: 14px; border: 2px solid var(--ok); background: var(--surface); }
+.sc-result h3 { font-family: var(--display); font-size: .95rem; color: var(--ok); margin-bottom: 8px; }
+.sc-result dl { display: grid; gap: 4px; }
+.sc-result dl div { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; }
+.sc-result dt { color: var(--mute); }
+.sc-result dd { font-weight: 700; margin: 0; }
+.sc-result p { margin-top: 10px; font-size: .88rem; color: var(--mute); }
+
+.sc-log { list-style: none; display: grid; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--room); color: #D7E2EA; font-size: .85rem; min-height: 8.5em; }
+.sc-log b { margin-right: 8px; color: #8EA3B2; font-variant-numeric: tabular-nums; }
+.sc-log .alert { color: #FF9C94; }
+.sc-log .ok { color: #6EE7A8; }
+.sc-keys { font-size: .82rem; color: var(--mute); }
+
+.sc-stage:fullscreen { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; padding: 14px; background: var(--bg); width: auto; margin: 0; align-items: stretch; overflow: auto; }
+.sc-stage:fullscreen #scene { height: 100%; max-height: calc(100vh - 28px); object-fit: contain; }
+.sc-stage:fullscreen .sc-screen { align-self: center; }
+
+[data-theme="dark"] .sc-card[aria-pressed="true"] { box-shadow: 0 8px 26px rgba(0, 0, 0, .5); }
+
+@media (max-width: 900px) {
+  .sc-stage { grid-template-columns: 1fr; }
+  .sc-stage:fullscreen { grid-template-columns: 1fr; }
+  .sc-btns { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-card { transition: none; }
+  .sc-card:hover { transform: none; }
+}

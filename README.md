@@ -8,6 +8,7 @@ Bob is a rescue robot. A phone mounted on the robot is its eyes. This website is
 - **Controls.** Switch between front and back camera, zoom (optical when the phone supports it), video quality (Low 360p, Standard 720p, High 1080p; chosen on the camera phone or remotely from the viewer), snapshot, fullscreen.
 - **3D model of Bob.** The "Inside Bob" section has an interactive concept model: drag to turn it, pick a part, open the drone hangar, try four colour schemes and see how reflective tape looks with the lights off.
 - **Survives trouble.** If the network drops, the phone and the PC reconnect by themselves with a fresh ticket. If a second phone takes over as the camera, the first one steps aside.
+- **Scenarios page.** `/scenarios` runs Bob and Pip through an earthquake, a building fire and a tunnel cave-in: Pip finds people from above, Bob squeezes in, with a thermal view, speed control and a before/after comparison with Pip removed.
 - **Fallbacks.** A demo mission for practice, and a Local network mode for the IP Webcam app when you run the site over plain `http` on your own network.
 
 ## Quick start

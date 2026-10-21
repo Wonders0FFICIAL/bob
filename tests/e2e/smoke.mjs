@@ -270,6 +270,36 @@ async function newPage(ctxOpts = {}) {
   await ctx.close();
 }
 
+{
+  const { ctx, page, problems } = await newPage({ viewport: { width: 1280, height: 900 } });
+  await page.goto(base + "/scenarios");
+  await page.waitForSelector("#scene");
+  check((await page.$$("[data-scn]")).length === 3, "scenarios page lists three scenarios");
+  await page.click('[data-scn="fire"]');
+  check((await page.textContent("#scname")) === "Building fire", "picking a scenario changes the title");
+  await page.click("#speed");
+  await page.click("#speed");
+  await page.click("#run");
+  await page.waitForFunction(() => /Pip launched/.test(document.getElementById("log").textContent), null, { timeout: 15000 });
+  check(true, "running a scenario launches Pip");
+  await page.click("#pipbay");
+  check((await page.getAttribute("#pipbay", "aria-pressed")) === "false", "Pip can be taken off Bob");
+  await page.goto(base + "/");
+  check(await page.isVisible('nav a[href="scenarios"]'), "the main page links to scenarios");
+  check(problems.csp.length === 0, "no CSP violations on the scenarios page " + problems.csp.join(" | "));
+  check(problems.pageErrors.length === 0, "no page errors on the scenarios page " + problems.pageErrors.join(" | "));
+  await ctx.close();
+}
+
+{
+  const { ctx, page } = await newPage({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+  await page.goto(base + "/scenarios");
+  await page.waitForSelector("#scene");
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check(wide <= 0, "no horizontal scroll on the scenarios page at phone width (overflow " + wide + "px)");
+  await ctx.close();
+}
+
 await browser.close();
 server.close();
 console.log(failures.length ? "\n" + failures.length + " check(s) failed" : "\nAll smoke checks passed");
