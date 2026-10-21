@@ -32,7 +32,8 @@ function createServer(handler, headers = {}) {
     }
     let p = decodeURIComponent(url.pathname);
     if (p === "/") p = "/index.html";
-    const file = path.normalize(path.join(ROOT, p));
+    let file = path.normalize(path.join(ROOT, p));
+    if (!path.extname(file) && fs.existsSync(file + ".html")) file += ".html";
     if (!file.startsWith(ROOT) || file.includes("node_modules") || file.includes(path.sep + "api" + path.sep)) {
       res.statusCode = 404;
       return res.end("Not found");

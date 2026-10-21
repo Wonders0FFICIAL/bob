@@ -1,5 +1,6 @@
-import { $ } from "../dom.js";
 import { store, KEYS } from "../storage.js";
+
+const $ = (id) => document.getElementById(id);
 
 export function initTheme() {
   const btn = $("theme"), label = $("themelabel"), root = document.documentElement;

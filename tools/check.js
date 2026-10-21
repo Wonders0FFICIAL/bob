@@ -34,28 +34,26 @@ for (const f of files.filter((f) => f.endsWith(".json") || f.endsWith(".webmanif
   try { JSON.parse(fs.readFileSync(f, "utf8")); } catch (e) { fail("invalid JSON in " + rel(f)); }
 }
 
-const htmlPath = path.join(root, "index.html");
-const html = fs.readFileSync(htmlPath, "utf8");
+const PAGES = ["index.html", "scenarios.html"].filter((f) => fs.existsSync(path.join(root, f)));
+const imported = new Set();
+const htmlOf = {};
 
-const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-for (const f of js.filter((f) => rel(f).startsWith("js" + path.sep))) {
-  const src = fs.readFileSync(f, "utf8");
-  for (const m of src.matchAll(/\$\("([^"]+)"\)/g)) {
-    if (!ids.has(m[1])) fail(rel(f) + ' looks up #' + m[1] + " but index.html has no such id");
+for (const page of PAGES) {
+  const html = fs.readFileSync(path.join(root, page), "utf8");
+  htmlOf[page] = html;
+  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+
+  for (const m of html.matchAll(/(?:src|href)="([^"#?]+)(?:[?#][^"]*)?"/g)) {
+    const ref = m[1];
+    if (/^(https?:|data:|mailto:|\/\/)/.test(ref)) continue;
+    const clean = ref.replace(/^\//, "");
+    if (fs.existsSync(path.join(root, clean)) || fs.existsSync(path.join(root, clean + ".html"))) continue;
+    if (OPTIONAL_ASSETS.test(ref)) warnings.push(page + " references " + ref + ", which is not in this folder");
+    else fail(page + " references missing file " + ref);
   }
-}
 
-for (const m of html.matchAll(/(?:src|href)="([^"#?]+)(?:[?#][^"]*)?"/g)) {
-  const ref = m[1];
-  if (/^(https?:|data:|mailto:|\/\/)/.test(ref)) continue;
-  if (fs.existsSync(path.join(root, ref.replace(/^\//, "")))) continue;
-  if (OPTIONAL_ASSETS.test(ref)) warnings.push("index.html references " + ref + ", which is not in this folder");
-  else fail("index.html references missing file " + ref);
-}
-
-const moduleRef = html.match(/<script type="module" src="([^"]+)"/);
-if (!moduleRef) fail("index.html has no module script");
-else {
+  const moduleRef = html.match(/<script type="module" src="([^"]+)"/);
+  if (!moduleRef) { fail(page + " has no module script"); continue; }
   const seen = new Set();
   (function follow(file) {
     if (seen.has(file)) return;
@@ -67,14 +65,22 @@ else {
       else follow(next);
     }
   })(path.join(root, moduleRef[1]));
-  for (const f of js.filter((f) => rel(f).startsWith("js" + path.sep) && f !== path.join(root, "js/package.json"))) {
-    if (!seen.has(f)) fail(rel(f) + " is not imported by anything");
+  for (const f of seen) {
+    imported.add(f);
+    const src = fs.readFileSync(f, "utf8");
+    for (const m of src.matchAll(/\$\("([^"]+)"\)/g)) {
+      if (!ids.has(m[1])) fail(rel(f) + " looks up #" + m[1] + " but " + page + " has no such id");
+    }
   }
+
+  if (/<script(?![^>]*\ssrc=)[^>]*>/.test(html)) fail(page + " has an inline script, which the Content-Security-Policy blocks");
+  if (/\son[a-z]+="/.test(html)) fail(page + " has an inline event handler, which the Content-Security-Policy blocks");
+  if (/<style[\s>]/.test(html) || /\sstyle="/.test(html)) fail(page + " has inline styles, which the Content-Security-Policy blocks");
 }
 
-if (/<script(?![^>]*\ssrc=)[^>]*>/.test(html)) fail("index.html has an inline script, which the Content-Security-Policy blocks");
-if (/\son[a-z]+="/.test(html)) fail("index.html has an inline event handler, which the Content-Security-Policy blocks");
-if (/<style[\s>]/.test(html) || /\sstyle="/.test(html)) fail("index.html has inline styles, which the Content-Security-Policy blocks");
+for (const f of js.filter((f) => rel(f).startsWith("js" + path.sep) && f !== path.join(root, "js/package.json"))) {
+  if (!imported.has(f)) fail(rel(f) + " is not imported by anything");
+}
 
 const vercel = JSON.parse(fs.readFileSync(path.join(root, "vercel.json"), "utf8"));
 const all = (vercel.headers || []).flatMap((h) => h.headers || []).map((h) => h.key);
@@ -94,4 +100,4 @@ if (problems.length) {
   console.error("Checks failed:\n - " + problems.join("\n - "));
   process.exit(1);
 }
-console.log("All checks passed (" + js.length + " scripts, " + ids.size + " page ids).");
+console.log("All checks passed (" + js.length + " scripts, " + PAGES.length + " pages).");

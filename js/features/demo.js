@@ -2,6 +2,7 @@ import { $, el, pad } from "../dom.js";
 import { S } from "../state.js";
 import { setStatus } from "../ui.js";
 import { claim, endActive } from "../control.js";
+import { drawStanding, drawLying, LOOKS } from "./person.js";
 import { store, KEYS } from "../storage.js";
 import { actionFor, driveKeyFor, HELP } from "./demo-keys.js";
 import { DEFAULT_PALETTE, nextPalette, paletteById } from "./thermal.js";
@@ -422,14 +423,7 @@ export function initDemo() {
     ctx.closePath(); ctx.fill();
   }
 
-  function figure(x, y, s, col) {
-    const wave = calm ? 0.5 : Math.sin(frame / 7) * 0.5;
-    ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineCap = "round";
-    ctx.lineWidth = 4 * s; ctx.beginPath(); ctx.moveTo(x, y - 10 * s); ctx.lineTo(x - 4 * s, y); ctx.moveTo(x, y - 10 * s); ctx.lineTo(x + 4 * s, y); ctx.stroke();
-    ctx.lineWidth = 7 * s; ctx.beginPath(); ctx.moveTo(x, y - 11 * s); ctx.lineTo(x, y - 23 * s); ctx.stroke();
-    ctx.lineWidth = 3 * s; ctx.beginPath(); ctx.moveTo(x, y - 21 * s); ctx.lineTo(x + (7 + wave * 3) * s, y - (32 + wave * 4) * s); ctx.stroke();
-    ctx.beginPath(); ctx.arc(x, y - 29 * s, 5 * s, 0, 7); ctx.fill();
-  }
+  function figure(x, y, s) { drawStanding(ctx, x, y, s, frame, LOOKS[0], calm); }
 
   function heat() { return Math.min(1, (temp() - 24) / 300); }
 
@@ -517,8 +511,7 @@ export function initDemo() {
         const pr = 12 + (calm ? 0 : (t % 60) / 3);
         ctx.strokeStyle = "rgba(30,158,90," + (calm ? 0.6 : 1 - (t % 60) / 60) + ")"; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(e.x, e.y, pr, 0, 7); ctx.stroke();
-        ctx.fillStyle = "#1E9E5A"; ctx.beginPath(); ctx.arc(e.x, e.y, 8, 0, 7); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(e.x, e.y - 2, 2.2, 0, 7); ctx.fill(); ctx.fillRect(e.x - 2.5, e.y + 0.5, 5, 3.5);
+        drawLying(ctx, e.x, e.y, 0.7, 0.5, LOOKS[0], frame, calm);
         pill(e.x, e.y + 28, e.aided ? "SURVIVOR · AID SENT" : "SURVIVOR", "#1E9E5A", "#fff", 10);
       }
     }
@@ -682,7 +675,7 @@ export function initDemo() {
         flame(p.sx - R * 0.55, gy, R * 1.5, R * 0.42, 1); flame(p.sx + R * 0.5, gy, R * 1.3, R * 0.4, 3); flame(p.sx, gy, R * 2.1, R * 0.6, 2);
         if (sc > 0.5) pill(p.sx, gy - R * 2.4 - 10, "FIRE \u00B7 " + metres(it.e), "#E5322D", "#fff", 11);
       } else if (it.k === "person") {
-        figure(p.sx, gy, sc * 1.05, "#7BEFB2");
+        figure(p.sx, gy, sc * 0.9);
         ctx.strokeStyle = "rgba(30,158,90,.8)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(p.sx, gy, 22 * sc, 7 * sc, 0, 0, 7); ctx.stroke();
         pill(p.sx, gy - 52 * sc - 10, it.e.aided ? "SURVIVOR · AID SENT" : "SURVIVOR \u00B7 " + metres(it.e), "#1E9E5A", "#fff", 11);
       } else if (it.k === "packet") {

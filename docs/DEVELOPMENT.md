@@ -26,6 +26,8 @@ js/
     demo.js           the demo mission: simulation, Map / Bob / Pip views, inset, Pip hold, input
     demo-keys.js      demo hotkey map and the on-screen key list (no browser needed)
     thermal.js        Pip thermal camera palettes (no browser needed)
+    person.js         the drawn people (standing and lying), shared by the demo and the scenarios page
+  scenarios/          the scenarios page (scenarios.html): worlds.js, sim.js (no browser needed), render.js, main.js
   viewer/             bob-viewer.js, the built three.js bundle (do not edit by hand)
 api/
   token.js            the passcode server (Vercel serverless function)
