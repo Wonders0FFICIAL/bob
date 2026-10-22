@@ -6,6 +6,7 @@ const slab = (x, y, w, h, tone = 0) => ({ x, y, w, h, tone });
 export const SCENARIOS = [
   {
     id: "earthquake",
+    par: 900,
     name: "Earthquake",
     tag: "Collapsed building",
     blurb: "A building has pancaked. People are alive in voids under the slabs, where no camera can see. Pip flies over the rubble and spots heat through the gaps. Bob squeezes in to reach them.",
@@ -27,9 +28,11 @@ export const SCENARIOS = [
       { x: 634, y: 285, note: "behind a leaning slab" },
     ],
     hazards: "dust",
+    event: { at: 420, banner: "AFTERSHOCK", text: "Aftershock. More slabs have come down, so Bob has to find another way.", blocks: [slab(250, 330, 50, 100, 1), slab(650, 470, 90, 44, 2)], shake: true },
   },
   {
     id: "fire",
+    par: 1500,
     name: "Building fire",
     tag: "Smoke-filled rooms",
     blurb: "A fire has split a floor into rooms. Smoke hides the people inside. Pip scouts over the walls and shows which rooms hold heat. Bob picks a way past the flames.",
@@ -52,9 +55,11 @@ export const SCENARIOS = [
       { x: 830, y: 210, note: "near the east window" },
     ],
     hazards: "smoke",
+    event: { at: 380, banner: "FLARE-UP", text: "A flare-up has started a new fire in the hall.", fires: [{ x: 360, y: 420, r: 22 }] },
   },
   {
     id: "tunnel",
+    par: 1100,
     name: "Tunnel cave-in",
     tag: "Pip cannot follow",
     blurb: "A cave-in has sealed a tunnel except for a gap the width of a person's shoulders. Pip cannot fly through rock. Bob is the only one who can squeeze past and reach the people beyond.",
@@ -76,5 +81,33 @@ export const SCENARIOS = [
     hazards: "dust",
   },
 ];
+
+SCENARIOS.push({
+  id: "flood",
+  par: 1500,
+  name: "Flooded street",
+  tag: "Pip reaches rooftops",
+  blurb: "Floodwater has cut off a street. Two people are stranded on rooftops, and Bob cannot cross deep water. Pip flies over, finds them and drops aid so the boat crew knows where to go. Bob wades the shallows to the person beside the car.",
+  steps: ["Pip scans the flooded street from above", "Stranded people show up as heat on the rooftops", "Pip drops aid and marks them for the boat crew", "Bob wades through the shallows to the car", "Bob comes home"],
+  palette: { sky: ["#0F2A3A", "#071722"], ground: "#2B6A7A", speck: "rgba(180,235,255,.10)", accent: "#4FD1C5", slab: ["#B9A68F", "#8E7B66", "#5E4E3F"], pile: ["#7A6A5A", "#9AA6AB", "#5C7A7E", "#B8654A"], zone: "#4FD1C5" },
+  seed: 53,
+  base: { x: 70, y: 520, a: -0.5 },
+  zone: { x: 200, y: 50, w: 720, h: 500, label: "FLOODED STREET" },
+  water: [
+    { x: 190, y: 20, w: 750, h: 560, deep: false },
+    { x: 400, y: 80, w: 250, h: 220, deep: true },
+    { x: 680, y: 50, w: 260, h: 230, deep: true },
+    { x: 380, y: 400, w: 150, h: 100, deep: true },
+  ],
+  blocks: [slab(470, 140, 110, 84, 0), slab(750, 105, 100, 92, 1), slab(676, 424, 56, 26, 2)],
+  piles: [[300, 300, 18], [600, 360, 16], [860, 360, 20], [260, 150, 16]],
+  fires: [],
+  survivors: [
+    { x: 525, y: 186, note: "on the rooftop", island: true },
+    { x: 704, y: 464, note: "beside the car", standing: true },
+    { x: 800, y: 150, note: "on the balcony", island: true },
+  ],
+  hazards: "water",
+});
 
 export const byId = (id) => SCENARIOS.find((s) => s.id === id) || SCENARIOS[0];

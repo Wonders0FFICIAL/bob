@@ -19,6 +19,7 @@ test("every survivor is reachable from the base in every scenario", () => {
   for (const def of worlds.SCENARIOS) {
     const s = sim.createSim(def);
     for (const sv of def.survivors) {
+      if (sv.island) continue;
       assert.ok(sim.findPath(s, def.base, sv), def.id + ": no path to " + sv.note);
       assert.equal(sim.isBlocked(s, sv.x, sv.y), false, def.id + ": " + sv.note + " is inside an obstacle");
     }
@@ -37,8 +38,26 @@ test("each scenario finishes on its own and finds everyone, with and without Pip
     for (const pipOn of [true, false]) {
       const s = run(def, pipOn);
       assert.ok(s.finished, def.id + " pip " + pipOn + " did not finish");
-      assert.equal(s.finished.found, def.survivors.length, def.id + " pip " + pipOn + " missed someone");
+      const want = pipOn ? def.survivors.length : def.survivors.filter((x) => !x.island).length;
+      assert.equal(s.finished.found, want, def.id + " pip " + pipOn + " found the wrong number");
     }
+  }
+});
+
+test("flood: Bob cannot reach the island survivors, Pip can and drops aid to them", () => {
+  const def = worlds.byId("flood");
+  const withPip = run(def, true).finished;
+  assert.equal(withPip.aided, 3);
+  assert.equal(withPip.found, 3);
+  assert.ok(run(def, false).finished.found < 3);
+});
+
+test("aftershock and flare-up events fire and Bob still finishes", () => {
+  for (const id of ["earthquake", "fire"]) {
+    const s = run(worlds.byId(id), true);
+    assert.ok(s.events !== undefined);
+    assert.ok(s.finished, id);
+    assert.ok(s.frame >= worlds.byId(id).event.at, id + " event never reached");
   }
 });
 

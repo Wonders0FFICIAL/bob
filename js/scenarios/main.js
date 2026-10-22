@@ -18,6 +18,46 @@ const ui = { scale: 1, calm, inset: true, palette: DEFAULT_PALETTE, banners: [],
 let def = byId((location.hash || "").slice(1));
 let tick = 0, sim = null, pipOn = true, speedIdx = 0, acc = 0, last = 0, raf = 0, visible = true, shown = false;
 const keys = {};
+const HAZARD = { smoke: "Smoke", water: "Floodwater" };
+
+function starsFor(f) {
+  const done = f.found >= f.total;
+  if (!done) return 1;
+  return f.located <= def.par ? 3 : f.located <= def.par * 2.5 ? 2 : 1;
+}
+
+function starText(n) {
+  const span = document.createElement("span");
+  for (let i = 0; i < 3; i++) { const o = document.createElement("span"); o.textContent = "\u2605"; if (i < n) o.className = "on"; span.append(o); }
+  return span.childNodes;
+}
+
+function paintCards() {
+  const times = readTimes();
+  for (const c of cards) {
+    const el = c.querySelector(".sc-best"), t = times[c.dataset.scn];
+    el.textContent = "";
+    if (!t || !t.stars) { el.textContent = "Not played yet"; continue; }
+    const st = document.createElement("span"); st.className = "on";
+    st.textContent = "\u2605".repeat(t.stars) + "\u2606".repeat(3 - t.stars);
+    el.append(st, " Best " + clock(Math.min(t.pip || 1e9, t.alone || 1e9)));
+  }
+}
+
+function paintStart() {
+  $("startname").textContent = def.name;
+  const chipsEl = $("startchips"); chipsEl.textContent = "";
+  const items = [def.survivors.length + " survivors"];
+  if (def.hazards && HAZARD[def.hazards]) items.push(HAZARD[def.hazards]);
+  if (def.event) items.push(def.event.banner.charAt(0) + def.event.banner.slice(1).toLowerCase() + " coming");
+  if (def.flyMaxX) items.push("Pip range limited");
+  if (def.survivors.some((x) => x.island)) items.push("Deep water");
+  for (const t of items) { const li = document.createElement("li"); li.textContent = t; chipsEl.append(li); }
+  $("startpar").textContent = "Par time " + clock(def.par) + " for three stars.";
+  $("start").hidden = false;
+}
+
+function hideStart() { $("start").hidden = true; }
 
 function fit() {
   const w = cv.clientWidth;
@@ -75,7 +115,13 @@ function showResult() {
   times[key] = times[key] || {};
   const prev = times[key][mode];
   if (!prev || f.located < prev) times[key][mode] = f.located;
+  const stars = starsFor(f);
+  times[key].stars = Math.max(times[key].stars || 0, stars);
   writeTimes(times);
+  paintCards();
+  const st = $("stars"); st.textContent = ""; st.append(...starText(stars)); st.setAttribute("aria-label", stars + " of 3 stars");
+  $("flip").textContent = f.pip ? "Try without Pip" : "Try with Pip";
+  $("next").hidden = SCENARIOS.length < 2;
   const rows = [["Survivors reached", f.found + " of " + f.total], ["Located in", clock(f.located)], ["Aid packets dropped", f.aided + (f.pip ? "" : " (Pip off)")], ["Bob battery left", f.battery + "%"]];
   const dl = $("resultlist"); dl.textContent = "";
   for (const [k, v] of rows) { const d = document.createElement("div"); const a = document.createElement("dt"), b = document.createElement("dd"); a.textContent = k; b.textContent = v; d.append(a, b); dl.append(d); }
@@ -93,6 +139,7 @@ function fresh() {
   $("result").hidden = true;
   log("Bob is at base. " + (pipOn ? "Pip is docked in his hangar." : "Pip is not on board."));
   cv.setAttribute("data-scenario", def.id);
+  paintStart();
   syncUi();
 }
 
@@ -129,7 +176,15 @@ function frameLoop(now) {
   if (++tick % 8 === 0) syncUi();
 }
 
-function runScenario() { fresh(); runAuto(sim); handle(drainEvents(sim)); syncUi(); }
+function runScenario() { fresh(); hideStart(); runAuto(sim); handle(drainEvents(sim)); syncUi(); }
+
+function goHome() {
+  hideStart(); sim.auto = null;
+  if (goTo(sim, sim.def.base, 8, "base")) log("Bob is heading back to base.");
+  handle(drainEvents(sim));
+}
+
+function nextScenario() { const i = SCENARIOS.findIndex((x) => x.id === def.id); select(SCENARIOS[(i + 1) % SCENARIOS.length].id, true); }
 
 function togglePip() { if (sim.pip) recallPip(sim); else launchPip(sim); handle(drainEvents(sim)); syncUi(); }
 
@@ -145,15 +200,16 @@ function toggleFull() {
 }
 
 const DRIVE = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down", a: "left", d: "right", w: "up", s: null, A: "left", D: "right", W: "up" };
+function pick(i) { if (SCENARIOS[i]) select(SCENARIOS[i].id, true); }
 const ACTIONS = {
   " ": runScenario, Enter: runScenario, l: togglePip, L: togglePip, n: () => { sendBobToSignal(sim); handle(drainEvents(sim)); }, N: () => { sendBobToSignal(sim); handle(drainEvents(sim)); },
   p: () => setPip(!pipOn), P: () => setPip(!pipOn), i: () => $("inset").click(), I: () => $("inset").click(), c: () => { ui.palette = nextPalette(ui.palette).id; }, C: () => { ui.palette = nextPalette(ui.palette).id; },
-  r: () => fresh(), R: () => fresh(), f: toggleFull, F: toggleFull, S: cycleSpeed,
+  r: () => fresh(), R: () => fresh(), b: goHome, B: goHome, 1: () => pick(0), 2: () => pick(1), 3: () => pick(2), 4: () => pick(3), f: toggleFull, F: toggleFull, S: cycleSpeed,
 };
 
 cv.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
-  if (e.key in DRIVE && DRIVE[e.key]) { keys[DRIVE[e.key]] = true; e.preventDefault(); return; }
+  if (e.key in DRIVE && DRIVE[e.key]) { hideStart(); keys[DRIVE[e.key]] = true; e.preventDefault(); return; }
   if (e.key === "s") { if (keys.up || keys.left || keys.right) { keys.down = true; } else cycleSpeed(); e.preventDefault(); return; }
   const act = ACTIONS[e.key];
   if (act) { if (!e.repeat) act(); e.preventDefault(); }
@@ -165,7 +221,7 @@ cv.addEventListener("click", (e) => {
   const r = cv.getBoundingClientRect();
   const x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
   if (y > H - 30) return;
-  sim.auto = null;
+  hideStart(); sim.auto = null;
   if (goTo(sim, { x, y }, 8)) log("Bob is heading to the spot you picked.");
   handle(drainEvents(sim));
   cv.focus({ preventScroll: true });
@@ -178,6 +234,11 @@ $("signal").addEventListener("click", () => { ACTIONS.n(); cv.focus({ preventScr
 $("pipbay").addEventListener("click", () => setPip(!pipOn));
 $("inset").addEventListener("click", () => { ui.inset = !ui.inset; $("inset").setAttribute("aria-pressed", String(ui.inset)); });
 $("reset").addEventListener("click", () => fresh());
+$("play").addEventListener("click", () => { runScenario(); cv.focus({ preventScroll: true }); });
+$("home").addEventListener("click", () => { goHome(); cv.focus({ preventScroll: true }); });
+$("again").addEventListener("click", () => { fresh(); cv.focus({ preventScroll: true }); });
+$("next").addEventListener("click", () => { nextScenario(); cv.focus({ preventScroll: true }); });
+$("flip").addEventListener("click", () => { setPip(!pipOn); runScenario(); cv.focus({ preventScroll: true }); });
 $("speed").addEventListener("click", cycleSpeed);
 $("full").addEventListener("click", toggleFull);
 document.addEventListener("fullscreenchange", () => { $("full").textContent = document.fullscreenElement ? "Exit full screen" : "Full screen"; fit(); });
@@ -186,5 +247,6 @@ if ("ResizeObserver" in window) new ResizeObserver(fit).observe(cv);
 if ("IntersectionObserver" in window) new IntersectionObserver((en) => { visible = en[0].isIntersecting; }, { threshold: 0.05 }).observe(stage);
 
 fit();
+paintCards();
 select(def.id, false);
 raf = requestAnimationFrame(frameLoop);
