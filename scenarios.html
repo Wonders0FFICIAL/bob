@@ -57,23 +57,41 @@
         <span class="sc-art" aria-hidden="true"></span>
         <span class="sc-name">Earthquake</span>
         <span class="sc-tag">Collapsed building</span>
+        <span class="sc-best"></span>
       </button>
       <button class="sc-card" type="button" data-scn="fire" aria-pressed="false">
         <span class="sc-art" aria-hidden="true"></span>
         <span class="sc-name">Building fire</span>
         <span class="sc-tag">Smoke-filled rooms</span>
+        <span class="sc-best"></span>
       </button>
       <button class="sc-card" type="button" data-scn="tunnel" aria-pressed="false">
         <span class="sc-art" aria-hidden="true"></span>
         <span class="sc-name">Tunnel cave-in</span>
         <span class="sc-tag">Pip cannot follow</span>
+        <span class="sc-best" aria-live="polite"></span>
+      </button>
+      <button class="sc-card" type="button" data-scn="flood" aria-pressed="false">
+        <span class="sc-art" aria-hidden="true"></span>
+        <span class="sc-name">Flooded street</span>
+        <span class="sc-tag">Pip reaches rooftops</span>
+        <span class="sc-best"></span>
       </button>
     </div>
   </section>
 
   <section class="sc-stage" id="stage" aria-label="Scenario simulation">
     <div class="sc-screen">
-      <canvas id="scene" width="960" height="600" tabindex="0" aria-label="Rescue simulation. Space runs the scenario, L launches Pip, N sends Bob to the next heat signature, P takes Pip off Bob, S changes speed, I shows the thermal picture, C changes the thermal colours, F is full screen, R resets. W A S D or the arrow keys drive Bob. Click the map to send Bob there."></canvas>
+      <canvas id="scene" width="960" height="600" tabindex="0" aria-label="Rescue simulation. Space runs the scenario, L launches Pip, N sends Bob to the next heat signature, P takes Pip off Bob, S changes speed, I shows the thermal picture, C changes the thermal colours, F is full screen, R resets, B sends Bob home, 1 to 4 pick a scenario. W A S D or the arrow keys drive Bob. Click the map to send Bob there."></canvas>
+      <div class="sc-start" id="start">
+        <div class="sc-start-box">
+          <h2 id="startname"></h2>
+          <ul class="sc-chips" id="startchips"></ul>
+          <p id="startpar"></p>
+          <button type="button" id="play" class="primary">Play <kbd>Space</kbd></button>
+          <p class="sc-start-hint">Or drive Bob yourself with W A S D.</p>
+        </div>
+      </div>
       <div class="sc-corner">
         <button type="button" id="speed" aria-label="Simulation speed">1x</button>
         <button type="button" id="full">Full screen</button>
@@ -89,17 +107,24 @@
         <button type="button" id="run" class="primary">Run scenario <kbd>Space</kbd></button>
         <button type="button" id="pipgo">Launch Pip <kbd>L</kbd></button>
         <button type="button" id="signal">Send Bob to signal <kbd>N</kbd></button>
+        <button type="button" id="home">Send Bob home <kbd>B</kbd></button>
         <button type="button" id="pipbay" aria-pressed="true">Pip on board <kbd>P</kbd></button>
         <button type="button" id="inset" aria-pressed="true">Thermal picture <kbd>I</kbd></button>
         <button type="button" id="reset" class="ghost">Reset <kbd>R</kbd></button>
       </div>
       <div class="sc-result" id="result" hidden aria-live="polite">
         <h3>Mission complete</h3>
+        <p class="sc-stars" id="stars" role="img" aria-label=""></p>
         <dl id="resultlist"></dl>
         <p id="resultnote"></p>
+        <div class="sc-next">
+          <button type="button" id="again">Try again <kbd>R</kbd></button>
+          <button type="button" id="flip"></button>
+          <button type="button" id="next" class="primary">Next scenario</button>
+        </div>
       </div>
       <ol class="sc-log" id="log" aria-live="polite" aria-label="Mission log"></ol>
-      <p class="sc-keys">Drive with W A S D or the arrows. Click the map to send Bob anywhere. S changes speed. C changes the thermal colours.</p>
+      <p class="sc-keys">Drive with W A S D or the arrows. Click the map to send Bob anywhere. S changes speed. C changes the thermal colours. Keys 1 to 4 pick a scenario, B sends Bob home.</p>
     </div>
   </section>
 </main>

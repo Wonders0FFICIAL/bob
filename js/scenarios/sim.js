@@ -9,15 +9,19 @@ const REACH = 24;
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
-function buildGrid(def) {
-  const blocked = new Uint8Array(COLS * ROWS);
+export const getBlocks = (sim) => sim.def.blocks.concat(sim.extra.blocks);
+export const getFires = (sim) => sim.def.fires.concat(sim.extra.fires);
+
+function buildGrid(def, extra = { blocks: [], fires: [] }) {
+  const blocked = new Uint8Array(COLS * ROWS), slow = new Uint8Array(COLS * ROWS);
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const x = c * CELL + CELL / 2, y = r * CELL + CELL / 2;
       let b = c === 0 || r === 0 || c === COLS - 1 || r === ROWS - 1;
-      for (const k of def.blocks) if (x >= k.x && x <= k.x + k.w && y >= k.y && y <= k.y + k.h) b = true;
+      for (const k of def.blocks.concat(extra.blocks)) if (x >= k.x && x <= k.x + k.w && y >= k.y && y <= k.y + k.h) b = true;
       for (const [px, py, pr] of def.piles) if (Math.hypot(x - px, y - py) < pr) b = true;
-      for (const f of def.fires) if (Math.hypot(x - f.x, y - f.y) < f.r + 10) b = true;
+      for (const f of def.fires.concat(extra.fires)) if (Math.hypot(x - f.x, y - f.y) < f.r + 10) b = true;
+      for (const w of def.water || []) if (x >= w.x && x <= w.x + w.w && y >= w.y && y <= w.y + w.h) { if (w.deep) b = true; else slow[r * COLS + c] = 1; }
       blocked[r * COLS + c] = b ? 1 : 0;
     }
   }
@@ -30,7 +34,7 @@ function buildGrid(def) {
       tight[r * COLS + c] = t;
     }
   }
-  return { blocked, tight };
+  return { blocked, tight, slow };
 }
 
 const cellOf = (x, y) => ({ c: Math.max(0, Math.min(COLS - 1, Math.floor(x / CELL))), r: Math.max(0, Math.min(ROWS - 1, Math.floor(y / CELL))) });
@@ -38,6 +42,11 @@ const cellOf = (x, y) => ({ c: Math.max(0, Math.min(COLS - 1, Math.floor(x / CEL
 export function isBlocked(sim, x, y) {
   const { c, r } = cellOf(x, y);
   return sim.grid.blocked[r * COLS + c] === 1;
+}
+
+function speedAt(sim, p) {
+  const { c, r } = cellOf(p.x, p.y);
+  return (sim.grid.tight[r * COLS + c] ? 1.1 : 2.3) * (sim.grid.slow[r * COLS + c] ? 0.6 : 1);
 }
 
 export function isTight(sim, x, y) {
@@ -90,7 +99,7 @@ export function findPath(sim, from, to) {
       const nc = cc + dc, nr = cr + dr, n = id(nc, nr);
       if (!free(nc, nr) || done.has(n)) continue;
       if (dc && dr && (!free(cc + dc, cr) || !free(cc, cr + dr))) continue;
-      const step = (dc && dr ? 1.414 : 1) * (sim.grid.tight[n] ? 2.4 : 1);
+      const step = (dc && dr ? 1.414 : 1) * (sim.grid.tight[n] ? 2.4 : sim.grid.slow[n] ? 1.8 : 1);
       const ng = gs.get(cur) + step;
       if (!gs.has(n) || ng < gs.get(n)) { gs.set(n, ng); parent.set(n, cur); if (!open.includes(n)) open.push(n); }
     }
@@ -130,7 +139,7 @@ export function createSim(def, opts = {}) {
     battery: 100, manual: false,
     survivors: def.survivors.map((s, i) => ({ ...s, id: i, state: "unknown", reached: false, aided: false, look: i % 4, foundAt: 0 })),
     events: [], target: null, path: [], auto: null, finished: null, explore: null, trail: [],
-    grid: buildGrid(def), cover: new Uint8Array(COLS * ROWS),
+    extra: { blocks: [], fires: [] }, shake: 0, eventDone: false, grid: buildGrid(def), cover: new Uint8Array(COLS * ROWS),
   };
   return sim;
 }
@@ -177,7 +186,7 @@ export function requestAid(sim, sv) {
 }
 
 export function nextSignal(sim) {
-  const open = sim.survivors.filter((s) => s.state === "signal" && !s.reached);
+  const open = sim.survivors.filter((s) => s.state === "signal" && !s.reached && !s.island);
   open.sort((a, b) => dist(sim.bob, a) - dist(sim.bob, b));
   return open[0] || null;
 }
@@ -191,7 +200,7 @@ export function sendBobToSignal(sim) {
 
 export function temperature(sim, p) {
   let t = 24;
-  for (const f of sim.def.fires) {
+  for (const f of getFires(sim)) {
     const d = Math.hypot(p.x - f.x, p.y - f.y);
     if (d < f.r + 120) t = Math.max(t, 24 + 420 * (1 - Math.max(0, d - f.r) / 120));
   }
@@ -201,9 +210,10 @@ export function temperature(sim, p) {
 function detect(sim, src, range, by) {
   for (const s of sim.survivors) {
     if (s.state !== "unknown" || dist(src, s) > range) continue;
-    s.state = "signal"; s.foundAt = sim.frame;
-    if (by === "pip") emit(sim, "signal", "Pip found a heat signature " + s.note + ".", "ok", { survivor: s, banner: "HEAT SIGNATURE" });
-    else emit(sim, "signal", "Bob found a heat signature " + s.note + ".", "ok", { survivor: s, banner: "HEAT SIGNATURE" });
+    s.state = "signal"; s.foundAt = sim.frame; sim.lastLocated = sim.frame;
+    const who = by === "pip" ? "Pip" : "Bob";
+    if (s.island) emit(sim, "signal", who + " spotted a stranded survivor " + s.note + ". Deep water blocks Bob, so the boat crew is being told.", "alert", { survivor: s, banner: "STRANDED SURVIVOR" });
+    else emit(sim, "signal", who + " found a heat signature " + s.note + ".", "ok", { survivor: s, banner: "HEAT SIGNATURE" });
   }
 }
 
@@ -269,7 +279,7 @@ function stepBob(sim, keys) {
     manual = true;
     if (keys.left) b.a -= 0.06;
     if (keys.right) b.a += 0.06;
-    const sp = (isTight(sim, b.x, b.y) ? 1.1 : 2.3) * (keys.up ? 1 : keys.down ? -0.6 : 0);
+    const sp = speedAt(sim, b) * (keys.up ? 1 : keys.down ? -0.6 : 0);
     const nx = b.x + Math.cos(b.a) * sp, ny = b.y + Math.sin(b.a) * sp;
     if (!isBlocked(sim, nx, ny)) { b.x = nx; b.y = ny; }
     if (sim.target || sim.auto) { sim.target = null; sim.path = []; sim.auto = null; emit(sim, "log", "Manual control.", "info"); }
@@ -281,7 +291,7 @@ function stepBob(sim, keys) {
     const want = Math.atan2(wp.y - b.y, wp.x - b.x);
     const diff = ((want - b.a + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
     b.a += Math.max(-0.1, Math.min(0.1, diff));
-    const sp = isTight(sim, b.x, b.y) ? 1.1 : 2.3;
+    const sp = speedAt(sim, b);
     if (Math.abs(diff) < 0.7) {
       const nx = b.x + Math.cos(b.a) * sp, ny = b.y + Math.sin(b.a) * sp;
       if (!isBlocked(sim, nx, ny)) { b.x = nx; b.y = ny; }
@@ -302,7 +312,7 @@ function stepBob(sim, keys) {
     if (sim.def.tapping && s.state === "unknown" && !s.tapped && dist(b, s) < 190) {
       s.tapped = true; emit(sim, "log", "Bob hears tapping from beyond the rubble.", "info", { banner: "TAPPING HEARD" });
     }
-    if (dist(b, s) < REACH) {
+    if (!s.island && dist(b, s) < REACH) {
       s.reached = true; s.state = "reached"; sim.lastReach = sim.frame;
       emit(sim, "reached", "Bob reached the survivor " + s.note + ". " + (s.id % 2 ? "Breathing, responsive." : "Conscious and calling out."), "ok", { survivor: s, banner: "SURVIVOR REACHED" });
       if (sim.target && sim.target.label === "signal") { sim.target = null; sim.path = []; }
@@ -311,9 +321,9 @@ function stepBob(sim, keys) {
 }
 
 function arrivedBase(sim) {
-  const n = sim.survivors.filter((s) => s.reached).length;
-  sim.finished = { frames: sim.frame, located: sim.lastReach || sim.frame, found: n, total: sim.survivors.length, aided: sim.survivors.filter((s) => s.aided).length, battery: Math.round(sim.battery), pip: sim.pipOn };
-  emit(sim, "done", "Bob is back at base with " + n + " of " + sim.survivors.length + " survivors located.", "ok", { banner: "MISSION COMPLETE" });
+  const n = sim.survivors.filter((s) => s.state !== "unknown").length;
+  sim.finished = { frames: sim.frame, located: sim.lastLocated || sim.lastReach || sim.frame, found: n, reached: sim.survivors.filter((s) => s.reached).length, total: sim.survivors.length, aided: sim.survivors.filter((s) => s.aided).length, battery: Math.round(sim.battery), pip: sim.pipOn };
+  emit(sim, "done", "Bob is back at base. " + n + " of " + sim.survivors.length + " survivors located.", "ok", { banner: "MISSION COMPLETE" });
 }
 
 export function runAuto(sim) {
@@ -324,8 +334,8 @@ export function runAuto(sim) {
 function stepAuto(sim) {
   const a = sim.auto;
   if (a.hold > 0) { a.hold--; return; }
-  const all = sim.survivors.every((s) => s.reached);
-  for (const s of sim.survivors) if (s.reached && !s.aided) requestAid(sim, s);
+  const all = sim.survivors.every((s) => s.reached || (s.island && s.aided));
+  for (const s of sim.survivors) if ((s.reached || (s.island && s.state === "signal")) && !s.aided) requestAid(sim, s);
   if (sim.target) return;
   if (a.phase === "go") {
     if (sim.pipOn && !sim.pip && !a.launched) { a.launched = true; launchPip(sim); a.hold = 30; return; }
@@ -349,8 +359,26 @@ function stepAuto(sim) {
   }
 }
 
+function fireEvent(sim) {
+  const ev = sim.def.event;
+  sim.eventDone = true;
+  sim.extra = { blocks: (ev.blocks || []).map((b) => ({ ...b, born: sim.frame })), fires: (ev.fires || []).map((f) => ({ ...f, born: sim.frame })) };
+  sim.grid = buildGrid(sim.def, sim.extra);
+  if (ev.shake) sim.shake = 70;
+  const b = sim.bob;
+  if (isBlocked(sim, b.x, b.y)) { const f = nearestFree(sim, b.x, b.y); if (f) { b.x = f.x; b.y = f.y; } }
+  if (sim.pip === null && sim.pipTrail) sim.pipTrail.length = 0;
+  emit(sim, "event", ev.text, "alert", { banner: ev.banner });
+  if (sim.target) {
+    const t = sim.target;
+    if (!goTo(sim, t, t.stop, t.label)) { sim.target = null; sim.path = []; }
+  }
+}
+
 export function step(sim, keys) {
   sim.frame++;
+  if (sim.shake > 0) sim.shake--;
+  if (sim.def.event && !sim.eventDone && sim.frame >= sim.def.event.at) fireEvent(sim);
   if (sim.auto) stepAuto(sim);
   stepBob(sim, keys);
   if (sim.pip) stepPip(sim);

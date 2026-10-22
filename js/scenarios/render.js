@@ -1,5 +1,5 @@
 import { W, H } from "./worlds.js";
-import { PIP_RANGE, BOB_SENSE, temperature } from "./sim.js";
+import { PIP_RANGE, BOB_SENSE, temperature, getBlocks, getFires } from "./sim.js";
 import { drawLying, LOOKS } from "../features/person.js";
 import { paletteById } from "../features/thermal.js";
 
@@ -65,6 +65,28 @@ function flame(ctx, x, y, h, w, ph, t, calm) {
   ctx.closePath(); ctx.fill();
 }
 
+function drawWater(ctx, def, t, calm) {
+  for (const w of def.water) {
+    const deep = w.deep;
+    const g = ctx.createLinearGradient(w.x, w.y, w.x + w.w, w.y + w.h);
+    g.addColorStop(0, deep ? "rgba(14,70,112,.82)" : "rgba(60,150,170,.42)"); g.addColorStop(1, deep ? "rgba(8,40,76,.88)" : "rgba(40,120,150,.46)");
+    ctx.fillStyle = g; ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.save(); ctx.beginPath(); ctx.rect(w.x, w.y, w.w, w.h); ctx.clip();
+    ctx.strokeStyle = deep ? "rgba(160,220,255,.28)" : "rgba(220,250,255,.2)"; ctx.lineWidth = 1.4;
+    const step = deep ? 26 : 34;
+    for (let y = w.y + 10; y < w.y + w.h; y += step) {
+      ctx.beginPath();
+      for (let x = w.x; x <= w.x + w.w; x += 10) {
+        const yy = y + Math.sin(x / 22 + y / 9 + (calm ? 0 : t / 22)) * 2.6;
+        if (x === w.x) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+    if (deep) { ctx.strokeStyle = "rgba(150,215,255,.45)"; ctx.lineWidth = 1.5; ctx.strokeRect(w.x + 0.5, w.y + 0.5, w.w - 1, w.h - 1); }
+  }
+}
+
 function drawWorld(ctx, sim, t, calm) {
   const def = sim.def, pal = def.palette, d = decor(def);
   const sky = ctx.createLinearGradient(0, 0, 0, H);
@@ -83,23 +105,33 @@ function drawWorld(ctx, sim, t, calm) {
   ctx.strokeRect(z.x - 8, z.y - 8, z.w + 16, z.h + 16); ctx.restore();
   pill(ctx, z.x + 74, z.y - 22, def.zone.label, "rgba(0,0,0,.45)", pal.zone, 10);
 
-  for (const b of def.blocks) { ctx.fillStyle = "rgba(0,0,0,.38)"; ctx.fillRect(b.x + 5, b.y + 7, b.w, b.h); }
+  if (def.water) drawWater(ctx, def, t, calm);
+  const blocks = getBlocks(sim), fires = getFires(sim);
+  for (const b of blocks) { ctx.fillStyle = "rgba(0,0,0,.38)"; ctx.fillRect(b.x + 5, b.y + 7, b.w, b.h); }
   for (const [x, y, r] of def.piles) { ctx.fillStyle = "rgba(0,0,0,.34)"; ctx.beginPath(); ctx.ellipse(x + 4, y + 7, r * 1.1, r * 0.9, 0, 0, 7); ctx.fill(); }
 
-  def.blocks.forEach((b, i) => {
+  blocks.forEach((b, i) => {
+    const drop = b.born === undefined ? 1 : Math.min(1, (sim.frame - b.born) / 18);
+    ctx.save();
+    if (drop < 1) { ctx.globalAlpha = drop; ctx.translate(0, -(1 - drop) * 40); }
     const g = ctx.createLinearGradient(b.x, b.y, b.x + b.w, b.y + b.h);
     g.addColorStop(0, pal.slab[0]); g.addColorStop(0.6, pal.slab[1]); g.addColorStop(1, pal.slab[2]);
     ctx.fillStyle = g; ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fillRect(b.x, b.y, b.w, Math.min(5, b.h));
     ctx.strokeStyle = "rgba(0,0,0,.45)"; ctx.lineWidth = 1.5; ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
     if (def.id === "fire") { ctx.strokeStyle = "rgba(255,110,60,.28)"; ctx.lineWidth = 1; ctx.strokeRect(b.x + 3, b.y + 3, b.w - 6, b.h - 6); }
-    if (def.id !== "fire" && b.w > 40 && b.h > 40) {
+    if (def.id !== "fire" && b.w > 40 && b.h > 40 && d.slabCracks[i]) {
       ctx.strokeStyle = "rgba(0,0,0,.42)"; ctx.lineWidth = 1.4;
       for (const [fx, fy, dx, dy] of d.slabCracks[i]) {
         const cx = b.x + fx * b.w, cy = b.y + fy * b.h;
         ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(Math.max(b.x, Math.min(b.x + b.w, cx + dx)), Math.max(b.y, Math.min(b.y + b.h, cy + dy))); ctx.stroke();
       }
     }
+    if (def.id === "flood" && i < 2) {
+      ctx.fillStyle = "rgba(0,0,0,.22)"; ctx.fillRect(b.x + 8, b.y + 8, b.w - 16, b.h - 16);
+      ctx.strokeStyle = "rgba(255,255,255,.18)"; ctx.lineWidth = 1; ctx.strokeRect(b.x + 8.5, b.y + 8.5, b.w - 17, b.h - 17);
+    }
+    ctx.restore();
   });
   ctx.strokeStyle = "#B4552D"; ctx.lineWidth = 2.2; ctx.lineCap = "round";
   for (const r of d.rebar) { ctx.beginPath(); ctx.moveTo(r.x, r.y); ctx.lineTo(r.x + Math.cos(r.a) * r.l, r.y + Math.sin(r.a) * r.l - 3); ctx.stroke(); }
@@ -117,7 +149,8 @@ function drawWorld(ctx, sim, t, calm) {
     }
   }
 
-  for (const f of def.fires) {
+  for (const f0 of fires) {
+    const grow = f0.born === undefined ? 1 : Math.min(1, (sim.frame - f0.born) / 40), f = grow < 1 ? { ...f0, r: f0.r * (0.3 + 0.7 * grow) } : f0;
     const gl = ctx.createRadialGradient(f.x, f.y, 4, f.x, f.y, f.r * 3);
     gl.addColorStop(0, "rgba(255,170,60,.62)"); gl.addColorStop(0.5, "rgba(255,90,30,.2)"); gl.addColorStop(1, "rgba(255,60,20,0)");
     ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(f.x, f.y, f.r * 3, 0, 7); ctx.fill();
@@ -138,6 +171,12 @@ function drawAmbient(ctx, sim, t, calm) {
       ctx.beginPath(); ctx.arc(x, y, 14 + u * 36, 0, 7); ctx.fill();
     }
     ctx.fillStyle = "rgba(60,48,50,.2)"; ctx.fillRect(0, 0, W, H);
+  } else if (h === "water") {
+    ctx.fillStyle = "rgba(190,235,255,.3)";
+    for (const p of d.dust) {
+      const x = (p.x + (calm ? 0 : t * p.v * 0.4)) % W, y = (p.y + (calm ? 0 : t * p.v * 1.4)) % H;
+      ctx.fillRect(x, y, 1.2, 5 + p.s * 2);
+    }
   } else {
     ctx.fillStyle = sim.def.id === "tunnel" ? "rgba(170,210,235,.35)" : "rgba(235,200,150,.34)";
     for (const p of d.dust) {
@@ -158,7 +197,14 @@ function drawSurvivors(ctx, sim, t, calm) {
       g.addColorStop(0, "rgba(255,240,150,.95)"); g.addColorStop(0.35, "rgba(255,110,40,.6)"); g.addColorStop(0.7, "rgba(196,38,122,.3)"); g.addColorStop(1, "rgba(120,30,140,0)");
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(s.x, s.y, 38 * pulse, 0, 7); ctx.fill();
       ctx.globalAlpha = 0.5; drawLying(ctx, s.x, s.y, 1.35, ang, look, t, calm); ctx.globalAlpha = 1;
-      pill(ctx, s.x, s.y - 44, "HEAT · " + (s.id + 1), "#E5322D", "#fff", 10);
+      if (s.aided) {
+        const k = Math.min(1, (sim.frame - (s.aidFrame || 0)) / 24), lift = (1 - k) * (1 - k) * 30;
+        ctx.fillStyle = "#FF7A1F"; ctx.strokeStyle = "#1A0F06"; ctx.lineWidth = 1.5;
+        ctx.fillRect(s.x + 22, s.y + 18 - lift, 11, 11); ctx.strokeRect(s.x + 22, s.y + 18 - lift, 11, 11);
+        ctx.fillStyle = "#fff"; ctx.fillRect(s.x + 26.6, s.y + 19.6 - lift, 2, 8); ctx.fillRect(s.x + 23.6, s.y + 22.6 - lift, 8, 2);
+      }
+      const tag = s.island ? (s.aided ? "STRANDED · AID SENT" : "STRANDED · " + (s.id + 1)) : "HEAT · " + (s.id + 1);
+      pill(ctx, s.x, s.y - 44, tag, s.aided ? "#1E9E5A" : "#E5322D", "#fff", 10);
     } else {
       ctx.strokeStyle = "rgba(60,220,130,.65)"; ctx.lineWidth = 2;
       const pr = 32 + (calm ? 0 : ((t + s.id * 17) % 60) / 4);
@@ -239,7 +285,7 @@ function drawThermalInset(ctx, sim, t, calm, paletteId) {
   ctx.fillStyle = col(0.04); ctx.fillRect(x0, y0, w, h);
   ctx.translate(x0 + w / 2, y0 + h / 2); ctx.scale(Z, Z); ctx.translate(-p.x, -p.y);
   ctx.fillStyle = col(0.22);
-  for (const b of sim.def.blocks) ctx.fillRect(b.x, b.y, b.w, b.h);
+  for (const b of getBlocks(sim)) ctx.fillRect(b.x, b.y, b.w, b.h);
   ctx.fillStyle = col(0.27);
   for (const [px, py, pr] of sim.def.piles) { ctx.beginPath(); ctx.arc(px, py, pr, 0, 7); ctx.fill(); }
   const blob = (x, y, r, v) => {
@@ -247,7 +293,7 @@ function drawThermalInset(ctx, sim, t, calm, paletteId) {
     g.addColorStop(0, col(v)); g.addColorStop(0.55, col(v * 0.62)); g.addColorStop(1, col(0, 0));
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
   };
-  for (const f of sim.def.fires) blob(f.x, f.y, f.r * 1.9, 1);
+  for (const f of getFires(sim)) blob(f.x, f.y, f.r * 1.9, 1);
   blob(sim.bob.x, sim.bob.y, 22, 0.5);
   for (const s of sim.survivors) if (Math.hypot(s.x - p.x, s.y - p.y) < PIP_RANGE * 1.15) blob(s.x, s.y, 20, 0.86);
   ctx.restore();
@@ -260,14 +306,14 @@ function drawThermalInset(ctx, sim, t, calm, paletteId) {
 }
 
 function chips(ctx, sim) {
-  const found = sim.survivors.filter((s) => s.state !== "unknown").length, reached = sim.survivors.filter((s) => s.reached).length, aided = sim.survivors.filter((s) => s.aided).length;
+  const found = sim.survivors.filter((s) => s.state !== "unknown").length, reached = sim.survivors.filter((s) => s.reached || (s.island && s.aided)).length, aided = sim.survivors.filter((s) => s.aided).length;
   const n = sim.survivors.length, temp = Math.round(temperature(sim, sim.bob));
   const items = [
     ["SIGNALS", found + "/" + n, found ? "#FF8A1F" : "rgba(255,255,255,.18)"],
-    ["REACHED", reached + "/" + n, reached ? "#1E9E5A" : "rgba(255,255,255,.18)"],
+    [sim.def.hazards === "water" ? "HELPED" : "REACHED", reached + "/" + n, reached ? "#1E9E5A" : "rgba(255,255,255,.18)"],
     ["AID", aided + "/" + n, aided ? "#59D2FF" : "rgba(255,255,255,.18)"],
   ];
-  if (sim.def.fires.length) items.push(["TEMP", temp + "°C", temp > 80 ? "#E5322D" : "rgba(255,255,255,.18)"]);
+  if (getFires(sim).length) items.push(["TEMP", temp + "°C", temp > 80 ? "#E5322D" : "rgba(255,255,255,.18)"]);
   let x = 14;
   for (const [k, v, c] of items) {
     ctx.font = "bold 11px sans-serif";
@@ -286,11 +332,13 @@ export function draw(ctx, sim, ui) {
   ctx.textAlign = "center"; ctx.textBaseline = "alphabetic"; ctx.lineCap = "butt"; ctx.setLineDash([]);
   if (sim.pip && sim.frame % 3 === 0) { sim.pipTrail = sim.pipTrail || []; sim.pipTrail.push({ x: sim.pip.x, y: sim.pip.y }); if (sim.pipTrail.length > 260) sim.pipTrail.shift(); }
   if (!sim.pip && sim.pipTrail && sim.pipTrail.length) sim.pipTrail.splice(0, 2);
+  if (sim.shake > 0 && !calm) ctx.translate((Math.random() - 0.5) * sim.shake * 0.18, (Math.random() - 0.5) * sim.shake * 0.18);
   drawWorld(ctx, sim, t, calm);
   drawSurvivors(ctx, sim, t, calm);
   drawAmbient(ctx, sim, t, calm);
   drawBob(ctx, sim, t, calm);
   drawPip(ctx, sim);
+  ctx.setTransform(ui.scale, 0, 0, ui.scale, 0, 0);
   const vg = ctx.createRadialGradient(W / 2, H / 2, 260, W / 2, H / 2, 640);
   vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.55)");
   ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
