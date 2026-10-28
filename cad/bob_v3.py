@@ -1,4 +1,5 @@
 from build123d import *
+from build123d import Shape
 import math
 import os
 import sys
