@@ -1,0 +1,20 @@
+.nf-page { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+.nf { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8vh 5vw; text-align: center; overflow: hidden; }
+.nf > * { position: relative; }
+.nf-grid { position: absolute !important; inset: 0; background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 72%); mask-image: radial-gradient(ellipse at center, #000 20%, transparent 72%); pointer-events: none; }
+.nf-chip { display: inline-flex; align-items: center; gap: 10px; padding: 7px 16px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--mute); font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.nf-chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--red); animation: nf-pulse 1.6s ease-in-out infinite; }
+.nf-code { margin-top: 18px; }
+.nf-title { margin-top: 10px; max-width: 18ch; font-family: var(--display); font-weight: 900; font-size: clamp(1.5rem, 4.2vw, 2.6rem); line-height: 1.15; letter-spacing: -.02em; }
+.nf-sub { margin-top: 16px; max-width: 54ch; color: var(--mute); }
+.nf-sub code { padding: 2px 8px; border-radius: 6px; background: var(--card); color: var(--text); font-size: .92em; overflow-wrap: anywhere; }
+.nf-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; margin-top: 30px; }
+.nf-actions .go { margin-top: 0; }
+.nf-btn { display: inline-block; padding: 13px 22px; border: 2px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--text); font-weight: 700; text-decoration: none; transition: border-color .15s, transform .15s; }
+.nf-btn:hover { border-color: var(--text); transform: translateY(-2px); }
+.nf-page .lens { animation: nf-glow 3.2s ease-in-out infinite; }
+@keyframes nf-pulse { 50% { opacity: .35; } }
+@keyframes nf-glow { 50% { box-shadow: 0 0 .5em rgba(255, 210, 31, .55); } }
+@media (prefers-reduced-motion: reduce) {
+  .nf-chip i, .nf-page .lens, .nf-btn { animation: none; transition: none; }
+}
