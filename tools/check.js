@@ -34,7 +34,7 @@ for (const f of files.filter((f) => f.endsWith(".json") || f.endsWith(".webmanif
   try { JSON.parse(fs.readFileSync(f, "utf8")); } catch (e) { fail("invalid JSON in " + rel(f)); }
 }
 
-const PAGES = ["index.html", "scenarios.html", "more.html"].filter((f) => fs.existsSync(path.join(root, f)));
+const PAGES = ["index.html", "scenarios.html", "more.html", "404.html"].filter((f) => fs.existsSync(path.join(root, f)));
 const imported = new Set();
 const htmlOf = {};
 
