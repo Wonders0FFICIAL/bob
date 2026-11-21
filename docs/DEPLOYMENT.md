@@ -91,6 +91,8 @@ Rules the server enforces:
 
 **Removing access:** delete that entry and redeploy. Existing connections end within the ticket lifetime at the latest, and nobody can rejoin.
 
+**Showing passcodes on the /more page:** open `js/more/config.js` and fill in the `phone` and `laptop` passcode of each channel, using the same values as `camera` and `viewer` in `BOB_CHANNELS`. Channels left empty are not shown. Anything in this file is public on the website, so only publish passcodes you are happy for anyone with the link to use.
+
 ## 6. Connect your domain
 
 1. Vercel project → **Settings → Domains** → add your address, for example `bob.jrofficial.org`.
