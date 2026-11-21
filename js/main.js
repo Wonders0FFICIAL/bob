@@ -5,7 +5,6 @@ import { initCamera } from "./live/camera.js";
 import { initLens } from "./features/lens.js";
 import { initTheme } from "./features/theme.js";
 import { initCopyLink } from "./features/copylink.js";
-import { initVideo } from "./features/video.js";
 import { initDemo } from "./features/demo.js";
 import { initModel } from "./features/model.js";
 
@@ -16,6 +15,5 @@ initCamera();
 initLens();
 initTheme();
 initCopyLink();
-initVideo();
 initDemo();
 initModel();

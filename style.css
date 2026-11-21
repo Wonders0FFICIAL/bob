@@ -122,6 +122,22 @@ h3 { font-size: 1.1rem; margin-bottom: 4px; }
   text-decoration: none;
 }
 
+@media (max-width: 760px) {
+  .top { gap: 6px; padding: 10px 5vw 8px; }
+  .top nav {
+    width: calc(100% + 10vw);
+    margin-inline: -5vw;
+    padding-inline: 5vw;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px 20px;
+    scrollbar-width: none;
+  }
+  .top nav::-webkit-scrollbar { display: none; }
+  .top nav a { flex: none; white-space: nowrap; }
+  .top nav .theme-btn { position: absolute; top: 8px; right: 5vw; padding: 6px 12px; }
+}
+
 .theme-btn {
   display: inline-flex;
   align-items: center;

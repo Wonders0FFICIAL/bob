@@ -57,13 +57,3 @@ toggle.addEventListener("click", () => {
   if (open && ready.length) build();
   if (!open) list.textContent = "";
 });
-
-const reveal = [...document.querySelectorAll("[data-reveal]")];
-if ("IntersectionObserver" in window && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  const io = new IntersectionObserver((entries) => {
-    for (const e of entries) {
-      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
-    }
-  }, { threshold: 0.12 });
-  for (const el of reveal) { el.classList.add("pre"); io.observe(el); }
-}

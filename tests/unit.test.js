@@ -56,12 +56,3 @@ test("token client classifies server answers", async () => {
   await assert.rejects(() => getToken("viewer", "x", reply(200, {})), (e) => e.retryable);
   await assert.rejects(() => getToken("viewer", "x", async () => { throw new TypeError("fetch failed"); }), (e) => e.network && e.retryable);
 });
-
-test("video link parsing", async () => {
-  const { youtubeId } = await import("../js/features/video.js").catch(() => ({}));
-  if (!youtubeId) return;
-  assert.equal(youtubeId("https://youtube.com/shorts/W0G0fOATsiU?si=abc"), "W0G0fOATsiU");
-  assert.equal(youtubeId("https://youtu.be/W0G0fOATsiU"), "W0G0fOATsiU");
-  assert.equal(youtubeId("W0G0fOATsiU"), "W0G0fOATsiU");
-  assert.equal(youtubeId("nonsense"), null);
-});

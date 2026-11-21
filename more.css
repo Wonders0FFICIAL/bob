@@ -71,9 +71,6 @@
 .mo-end { text-align: center; }
 .mo-end h2 { margin-inline: auto; }
 
-.mo-wrap.pre { opacity: 0; transform: translateY(18px); }
-.mo-wrap.pre.in { opacity: 1; transform: none; transition: opacity .6s ease, transform .6s ease; }
-
 @media (max-width: 760px) {
   .mo-split { grid-template-columns: 1fr; }
   .mo-pull { position: static; }

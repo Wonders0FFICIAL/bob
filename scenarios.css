@@ -74,6 +74,9 @@
 
 [data-theme="dark"] .sc-card[aria-pressed="true"] { box-shadow: 0 8px 26px rgba(0, 0, 0, .5); }
 
+#scblurb { min-height: 6em; }
+.sc-steps { min-height: 150px; }
+
 @media (max-width: 900px) {
   .sc-stage { grid-template-columns: 1fr; }
   .sc-stage:fullscreen { grid-template-columns: 1fr; }
@@ -84,7 +87,7 @@
   .sc-card:hover { transform: none; }
 }
 
-.sc-start { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(5, 11, 16, .62); backdrop-filter: blur(3px); z-index: 2; }
+.sc-start { position: absolute; inset: 0; display: grid; place-items: center; padding: 56px 10px 10px; background: rgba(5, 11, 16, .62); backdrop-filter: blur(3px); z-index: 2; }
 .sc-start[hidden] { display: none; }
 .sc-start-box { text-align: center; color: #E6EDF2; padding: 20px; max-width: 420px; }
 .sc-start-box h2 { font-family: var(--display); font-weight: 900; font-size: clamp(1.3rem, 3.4vw, 2rem); margin-bottom: 10px; }
