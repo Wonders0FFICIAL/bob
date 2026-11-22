@@ -27,6 +27,7 @@ js/
     demo-keys.js      demo hotkey map and the on-screen key list (no browser needed)
     thermal.js        Pip thermal camera palettes (no browser needed)
     person.js         the drawn people (standing and lying), shared by the demo and the scenarios page
+  sim/main.js         the simulation page (simulation.html): physics, mission, replay, control link. Plain JS on vendor/three-r128 (loaded as classic scripts); models/sim/*.json hold the mesh, the demo timeline and the arena
   scenarios/          the scenarios page (scenarios.html): worlds.js, sim.js (no browser needed), render.js, main.js
   viewer/             bob-viewer.js, the built three.js bundle (do not edit by hand)
 api/
