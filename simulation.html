@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BOB – Rescue simulation</title>
+<meta name="description" content="Drive BOB yourself in a rescue arena: rocker-bogie suspension, Pip the scouting drone, thermal camera, scored missions and replays. Plays on a computer, phone or gamepad.">
+<meta name="theme-color" content="#0b0e13">
+<link rel="canonical" href="https://bob.jrofficial.org/simulation">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BOB">
+<meta property="og:url" content="https://bob.jrofficial.org/simulation">
+<meta property="og:title" content="BOB – Rescue simulation">
+<meta property="og:description" content="Drive the rescue robot yourself: climb ramps, fly Pip, find the casualty with the thermal camera.">
+<meta property="og:image" content="https://bob.jrofficial.org/og-image.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="simulation.css">
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="title" class="panel"><a class="back" href="./" aria-label="Back to the BOB site">&larr; BOB site</a><span>rescue run, motion sim</span><a class="back" href="scenarios">Scenarios</a></div>
+<div id="hud" class="panel">
+ <b>Rocker</b><em id="h_th">0.0°</em>
+ <b>Bogie L / R</b><em id="h_ph">0.0° / 0.0°</em>
+ <b>Body pitch</b><em id="h_pi">0.0°</em>
+ <b>Body roll</b><em id="h_ro">0.0°</em>
+ <b>Speed</b><em id="h_sp">0.00 m/s</em>
+ <b>Pip height</b><em id="h_pz">docked</em>
+ <b>Motor load</b><em id="h_ld">-</em>
+ <b>Wheel slip</b><em id="h_sl">-</em>
+ <b>Tip margin</b><em id="h_tp">-</em>
+ <b>Battery</b><em id="h_bt">-</em>
+ <b>Current</b><em id="h_cu">-</em>
+ <b>Damage</b><em id="h_dm">-</em>
+ <b>Range (cm)</b><em id="h_rg">-</em>
+ <b>Link</b><em id="h_st">keyboard</em>
+</div>
+<div id="pipcam" class="panel">PIP CAM</div>
+<div id="cap" class="panel">Loading…</div><div id="msg" class="panel"></div>
+<div id="bar" class="panel">
+ <div class="row" id="tlrow">
+  <div id="tl"><div id="ticks"></div><input id="seek" type="range" min="0" max="100" step="0.01" value="0" aria-label="Timeline"></div>
+  <div id="time">0.0 / 0.0 s</div>
+ </div>
+ <div class="row">
+  <button id="mode">Demo mode</button><button id="play">Pause</button><button id="restart">Restart</button><button id="bHelp">Help</button>
+  <button id="spd" title="Playback speed">1x</button>
+  <span class="sp"></span>
+  <span id="cams" class="row"></span>
+  <button id="tiltb">Tilt</button><button id="rpb">Replay</button><button id="rpsave" class="repOnly">Save run</button><button id="rpload" class="repOnly">Load run</button><button id="rpvid" class="repOnly">Export video</button><input id="rpfile" type="file" accept=".json,application/json" hidden><button id="msb">Mission</button><button id="lkb">Link</button><button id="camb">Cams</button><button id="phb">Physics</button><button id="snd">Sound: on</button><button id="xray">X-ray</button>
+ </div>
+</div>
+<div id="stL" class="stick"><small>DRIVE</small><i></i></div><div id="stR" class="stick"><small id="stRl">PIP TURN / UP</small><i></i></div>
+<div id="dpad" class="panel"><div class="dp"><span></span><button data-k="ArrowUp">▲</button><span></span><button data-k="ArrowLeft">◀</button><button data-k="ArrowDown">▼</button><button data-k="ArrowRight">▶</button></div><div class="dp2"><button data-k="KeyR">Up</button><button data-k="KeyF">Down</button></div></div>
+<div id="acts" class="panel"><button id="bPip">Launch Pip</button><button id="bDrop">Drop packet</button><button id="bFlap">Cargo flap</button><button id="bSwap">Switch</button></div>
+<div id="mhud" class="panel"><div class="tm" id="m_t">0:00</div><div class="ob" id="m_1">○ Find the casualty (thermal)</div><div class="ob" id="m_2">○ Drop a packet near the casualty</div><div class="ob" id="m_3">○ Medicine packet into the drop zone</div><div class="ob" id="m_4">○ Land Pip and stop Bob</div><div class="sc" id="m_s"></div></div>
+<div id="mis" class="panel"><b>Mission</b><p>Find the casualty with the thermal camera, drop a packet next to them, deliver the medicine packet to the drop zone on the platform, land Pip and stop Bob. Faster and cleaner scores higher. Limit 10 minutes.</p>
+<div class="row"><label>Arena seed <input id="m_seed" type="number" min="0" max="99999" value="0"></label></div>
+<div class="row"><button id="m_rnd">Randomize</button><button id="m_cls">Classic</button></div>
+<p id="m_best"></p><div class="row"><button id="m_go" class="on">Start mission</button><button id="m_x">Close</button></div></div>
+<div id="mend" class="panel"></div><div id="rpmark" class="panel">REPLAY</div>
+<div id="lk" class="panel"><b>Link to real code</b><p>Connect BOB to your own program over a WebSocket (the program is the server, this page is the client). Example: <code>ws://localhost:8765</code>. See BOB_sim_API.md.</p>
+<div class="row"><input id="lk_url" type="text" placeholder="ws://localhost:8765" spellcheck="false"></div>
+<div class="row"><button id="lk_go" class="on">Connect</button><button id="lk_x">Disconnect</button><button id="lk_c">Close</button></div><p id="lk_st">Not connected. Keyboard control is active.</p></div>
+<div id="help" class="panel"><h2>How to play</h2>
+<p>Drive BOB through the arena yourself. The wheels, rocker arms, bogies and differential bar move for real as the ground changes under them.</p>
+<table>
+<tr><th colspan="2">Driving BOB</th></tr>
+<tr><td><kbd>W</kbd> <kbd>S</kbd> or <kbd>↑</kbd> <kbd>↓</kbd></td><td>forward / reverse</td></tr>
+<tr><td><kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd></td><td>turn on the spot (tank steering)</td></tr>
+<tr><td><kbd>Shift</kbd></td><td>hold for slow, precise driving</td></tr>
+<tr><td><kbd>M</kbd></td><td>open or close the cargo flap (drops the medicine packet)</td></tr>
+<tr><th colspan="2">Flying Pip</th></tr>
+<tr><td><kbd>P</kbd></td><td>launch Pip (Bob must be stopped and level), press again to auto-land</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>switch control between Bob and Pip</td></tr>
+<tr><td><kbd>W</kbd> <kbd>S</kbd> / <kbd>A</kbd> <kbd>D</kbd></td><td>Pip forward, back, strafe</td></tr>
+<tr><td><kbd>Q</kbd> <kbd>E</kbd> or <kbd>←</kbd> <kbd>→</kbd></td><td>turn Pip</td></tr>
+<tr><td><kbd>R</kbd> <kbd>F</kbd></td><td>Pip up / down</td></tr>
+<tr><td><kbd>Space</kbd></td><td>drop one of Pip's 3 packets</td></tr>
+<tr><th colspan="2">Mission, replay, link</th></tr>
+<tr><td><b>Mission</b></td><td>timed run with a score: find the casualty on the thermal camera, drop a packet next to them, deliver the medicine packet, land Pip. Pick an arena seed or press Randomize.</td></tr>
+<tr><td><b>Cams</b></td><td>shows Bob's webcam and the 32x24 thermal camera (the casualty glows hot)</td></tr>
+<tr><td><b>Replay</b></td><td>watch your last run again, save it to a file, load it later, or export a video</td></tr>
+<tr><td><b>Link</b></td><td>drive BOB from your own code over WebSocket (see BOB_sim_API.md)</td></tr>
+<tr><td>Phone</td><td>two on-screen sticks (left drives, right turns/lifts Pip), <b>Tilt</b> steers like a wheel. Landscape works best. A gamepad also works: sticks, A launch/land, B drop, X flap, Y switch, bumpers camera.</td></tr>
+<tr><th colspan="2">Other</th></tr>
+<tr><td><kbd>C</kbd></td><td>change camera (Chase, Side, Top, Pip cam, Free)</td></tr>
+<tr><td><kbd>X</kbd></td><td>X-ray the shell</td></tr>
+<tr><td><kbd>Backspace</kbd></td><td>reset everything</td></tr>
+</table>
+<p class="tip"><b>Try this:</b> 1. drive over the two logs and the blocks and watch the arms. 2. Stop near the casualty (the orange dummy), press <kbd>P</kbd>, fly Pip over it and drop a packet. 3. Land Pip with <kbd>P</kbd>. 4. Drive up the ramp to the glowing drop zone and press <kbd>M</kbd>. On a phone or tablet, use the on-screen buttons.</p>
+<div class="row"><button id="hPlay" class="on">Start playing</button><button id="hDemo">Watch the demo instead</button></div></div>
+<div id="phys" class="panel"><div class="ph"><b>Physics</b><button id="phOn" class="on">On</button></div>
+<label><span>Bob mass (without Pip)</span><em id="v_m">4.9 kg</em><input type="range" id="s_m" min="3" max="12" step="0.1" value="4.9"></label>
+<label><span>Pip mass</span><em id="v_p">0.5 kg</em><input type="range" id="s_p" min="0.2" max="2" step="0.1" value="0.5"></label>
+<label><span>Motor stall torque (each)</span><em id="v_t">14 kg·cm</em><input type="range" id="s_t" min="2" max="30" step="1" value="14"></label>
+<label><span>Grip (friction)</span><em id="v_u">0.80</em><input type="range" id="s_u" min="0.1" max="1.2" step="0.05" value="0.8"></label>
+<label><span>Battery drain speed</span><em id="v_d">x1</em><input type="range" id="s_d" min="0" max="2" step="1" value="0"></label>
+<label><span>Ramp angle</span><em id="v_r">20°</em><input type="range" id="s_r" min="10" max="40" step="1" value="20"></label>
+<p>Off = simple arcade driving. On = motor torque, traction, slopes, load and tipping are simulated.</p>
+<button id="phDef">Defaults</button></div>
+<div id="camw" class="cfr"><span>BOB WEBCAM</span></div>
+<div id="camt" class="cfr"><span id="camtl">THERMAL 32x24</span><canvas id="tcv" width="32" height="24"></canvas><i id="thhot"></i></div>
+<div id="load">Loading simulation…</div>
+<script src="vendor/three-r128.min.js"></script>
+<script src="vendor/three-r128-OrbitControls.js"></script>
+<script type="module" src="js/sim/main.js"></script>
+</body>
+</html>

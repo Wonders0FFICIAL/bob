@@ -297,6 +297,21 @@ async function newPage(ctxOpts = {}) {
 }
 
 {
+  const { ctx, page, problems } = await newPage({ viewport: { width: 1280, height: 720 } });
+  await page.goto(base + "/simulation");
+  await page.waitForFunction(() => window.__bob && window.__bob.ready, null, { timeout: 60000 });
+  check(true, "the simulation page loads its model and starts");
+  await page.evaluate(() => window.__bob.playSteps(["KeyW"], 2));
+  const x = await page.evaluate(() => window.__bob.state().b.X);
+  check(x > 300, "Bob drives forward in the simulation (moved " + Math.round(x) + " mm)");
+  await page.evaluate(() => { window.BOB_SIM.command({ t: "hb" }); window.__bob.playSteps([], 0.1); window.BOB_SIM.command({ t: "hb" }); window.BOB_SIM.command({ t: "arm" }); });
+  check((await page.evaluate(() => window.BOB_SIM.telemetry().state)) === "ARMED", "the control link can be armed");
+  check(problems.csp.length === 0, "no CSP violations on the simulation page " + problems.csp.join(" | "));
+  check(problems.pageErrors.length === 0, "no page errors on the simulation page " + problems.pageErrors.join(" | "));
+  await ctx.close();
+}
+
+{
   const { ctx, page } = await newPage({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
   await page.goto(base + "/scenarios");
   await page.waitForSelector("#scene");
