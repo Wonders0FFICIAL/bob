@@ -66,6 +66,18 @@ All messages are JSON objects with a `t` field. Units are SI: metres, seconds, r
   `data` is 32x24 bytes, row-major from the top-left, 0 = cold, 255 = hottest. `hot` counts very hot pixels
   (the casualty). `src` says whether it is Bob's camera or Pip's.
 
+## What is in the simulator
+
+- **Arenas** (Mission panel): *Open course* (the default), *Slalom* (eight gates 400 mm apart on a curved line, two low bumps, barrels, casualty past the finish) and *Rubble* (logs and blocks up to 56 mm, debris around the casualty, a cone cordon). Each has a seed, so a layout can be repeated.
+- **Cones**: 40 physical cones. They tip about their rim, slide when pushed, and can be knocked over by Bob or Pip. Hits count in the mission score and are kept in the replay.
+- **Casualty**: a jointed model (pelvis, spine, chest, neck, head, arms with fingers, legs) with a slab on the shins, a vest with reflective bands, a helmet, a breathing animation and a hand wave. It carries heat tags, so it shows up in the thermal view.
+- **Cameras** (camera button): Cinematic (auto director), Chase, Driver, Wheel, Pip follow, Top and Free. They use spring smoothing, speed based field of view and collision clamping. Camera shake and shadows can be turned off in Settings.
+- **Sound**: synthesised from the real parts: JGB37-520 motor whine (pitch follows wheel speed, louder under load), MG90S servo chirps for the cargo flap, relay click on arm and disarm, buzzer beeps, ducted-fan noise for Pip, plus impacts for walls, barrels and cones. Volume and mute are in Settings.
+- **Hardware panel**: live motor, battery and current figures, with a *Real parts* preset (66 rpm motors with 100 mm wheels, about 0.345 m/s, 5.4 kg). Motor torque is still an estimate.
+- **Settings**: quality, shadows, effects, shake, volume. They are stored in the browser.
+
+The sim code is split into `js/sim/main.js` (loop, physics, cameras, mission), `arenas.js`, `cones.js`, `human.js`, `audio.js` and `ui.js`.
+
 ## Honest limits
 
 - The sim is a simplified model (the numbers for mass, motor torque, grip and battery are assumptions).
@@ -74,6 +86,6 @@ All messages are JSON objects with a `t` field. Units are SI: metres, seconds, r
 
 ## Notes for the website
 
-- The page lives in `simulation.html`, `simulation.css` and `js/sim/main.js`. It uses three.js r128 from `vendor/` because the sim was written for that version; the 3D model panel on the home page uses its own newer build, so the two do not conflict.
+- The page lives in `simulation.html`, `simulation.css` and `js/sim/*.js`. It uses three.js r128 from `vendor/` because the sim was written for that version; the 3D model panel on the home page uses its own newer build, so the two do not conflict.
 - The Content-Security-Policy allows `ws://localhost:*` and `ws://127.0.0.1:*` so the page can talk to a program on the same computer. A bridge on another machine needs `wss://` and an extra `connect-src` entry.
 - The sim cannot be framed by other sites (the site sets `frame-ancestors 'none'`), so the postMessage route only matters if you later change that.

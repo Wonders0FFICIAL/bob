@@ -23,91 +23,221 @@
 <link rel="stylesheet" href="simulation.css">
 </head>
 <body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+ <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4m0 0h11l-2 4 2 4H5"/></symbol>
+ <symbol id="i-feeds" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/></symbol>
+ <symbol id="i-chip" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M9 3v4M15 3v4M9 17v4M15 17v4M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+ <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+ <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.6 0l3-3a4 4 0 0 0-5.6-5.6l-1 1"/><path d="M14 10a4 4 0 0 0-5.6 0l-3 3a4 4 0 0 0 5.6 5.6l1-1"/></symbol>
+ <symbol id="i-photo" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+ <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></symbol>
+ <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></symbol>
+ <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+ <symbol id="i-tilt" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/></symbol>
+ <symbol id="i-cube" viewBox="0 0 24 24"><path d="M3 8l9-5 9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+ <symbol id="i-pip" viewBox="0 0 24 24"><path d="M12 4v6M5 7h14M7 7l2 5h6l2-5"/><circle cx="6" cy="17" r="2.2"/><circle cx="18" cy="17" r="2.2"/><path d="M8 17h8"/></symbol>
+ <symbol id="i-drop" viewBox="0 0 24 24"><rect x="6" y="13" width="12" height="7" rx="1"/><path d="M12 3v6M9 7l3 3 3-3"/></symbol>
+ <symbol id="i-flap" viewBox="0 0 24 24"><path d="M4 19h16M6 19l6-10 6 10"/></symbol>
+ <symbol id="i-swap" viewBox="0 0 24 24"><path d="M7 8h12l-3-3M17 16H5l3 3"/></symbol>
+ <symbol id="i-replay" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 3-6.2M4 4v5h5"/></symbol>
+ <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></symbol>
+ <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="7" r="3"/><path d="M5 21v-3a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v3"/></symbol>
+</svg>
 <canvas id="c"></canvas>
-<div id="title" class="panel"><a class="back" href="./" aria-label="Back to the BOB site">&larr; BOB site</a><span>rescue run, motion sim</span><a class="back" href="scenarios">Scenarios</a></div>
-<div id="hud" class="panel">
- <b>Rocker</b><em id="h_th">0.0°</em>
- <b>Bogie L / R</b><em id="h_ph">0.0° / 0.0°</em>
- <b>Body pitch</b><em id="h_pi">0.0°</em>
- <b>Body roll</b><em id="h_ro">0.0°</em>
- <b>Speed</b><em id="h_sp">0.00 m/s</em>
- <b>Pip height</b><em id="h_pz">docked</em>
- <b>Motor load</b><em id="h_ld">-</em>
- <b>Wheel slip</b><em id="h_sl">-</em>
- <b>Tip margin</b><em id="h_tp">-</em>
- <b>Battery</b><em id="h_bt">-</em>
- <b>Current</b><em id="h_cu">-</em>
- <b>Damage</b><em id="h_dm">-</em>
- <b>Range (cm)</b><em id="h_rg">-</em>
- <b>Link</b><em id="h_st">keyboard</em>
-</div>
+<div id="vig"></div>
+
+<header id="title" class="panel">
+ <a class="back" href="./" aria-label="Back to the BOB site"><svg class="ic" viewBox="0 0 24 24"><use href="#i-cube"/></svg><b>BOB</b></a>
+ <span class="sep"></span><span class="ttl">Rescue simulation</span>
+ <a class="back sm" href="scenarios">Scenarios</a>
+</header>
+
+<aside id="hud" class="panel">
+ <div class="hd"><b>Telemetry</b><span class="chip info" id="h_st">keyboard</span></div>
+ <div class="spd"><em id="h_sp">0.00 m/s</em><i class="mt wide"><b id="spdbar"></b></i></div>
+ <div class="bars">
+  <div class="bar"><span>Battery</span><i class="mt"><b id="mt_bt"></b></i><em id="h_bt">-</em></div>
+  <div class="bar"><span>Motor load</span><i class="mt"><b id="mt_ld"></b></i><em id="h_ld">-</em></div>
+  <div class="bar"><span>Wheel slip</span><i class="mt"><b id="mt_sl"></b></i><em id="h_sl">-</em></div>
+  <div class="bar"><span>Damage</span><i class="mt"><b id="mt_dm"></b></i><em id="h_dm">-</em></div>
+ </div>
+ <div class="grid">
+  <b>Rocker</b><em id="h_th">0.0°</em>
+  <b>Bogie L / R</b><em id="h_ph">0.0° / 0.0°</em>
+  <b>Body pitch</b><em id="h_pi">0.0°</em>
+  <b>Body roll</b><em id="h_ro">0.0°</em>
+  <b>Pip height</b><em id="h_pz">docked</em>
+  <b>Tip margin</b><em id="h_tp">-</em>
+  <b>Current</b><em id="h_cu">-</em>
+  <b>Range (cm)</b><em id="h_rg">-</em>
+ </div>
+</aside>
+<aside id="mm" class="panel"><canvas id="mmc" width="440" height="208"></canvas><span class="cap">MAP</span></aside>
+
 <div id="pipcam" class="panel">PIP CAM</div>
-<div id="cap" class="panel">Loading…</div><div id="msg" class="panel"></div>
-<div id="bar" class="panel">
+<div id="msg" class="panel"></div>
+<div id="cap" class="panel">Loading…</div>
+
+<nav id="bar" class="panel" aria-label="Controls">
  <div class="row" id="tlrow">
   <div id="tl"><div id="ticks"></div><input id="seek" type="range" min="0" max="100" step="0.01" value="0" aria-label="Timeline"></div>
   <div id="time">0.0 / 0.0 s</div>
  </div>
- <div class="row">
-  <button id="mode">Demo mode</button><button id="play">Pause</button><button id="restart">Restart</button><button id="bHelp">Help</button>
+ <div class="dock">
+  <button id="mode" class="pill">Demo mode</button>
+  <button id="restart">Restart</button>
+  <button id="play">Pause</button>
   <button id="spd" title="Playback speed">1x</button>
-  <span class="sp"></span>
-  <span id="cams" class="row"></span>
-  <button id="tiltb">Tilt</button><button id="rpb">Replay</button><button id="rpsave" class="repOnly">Save run</button><button id="rpload" class="repOnly">Load run</button><button id="rpvid" class="repOnly">Export video</button><input id="rpfile" type="file" accept=".json,application/json" hidden><button id="msb">Mission</button><button id="lkb">Link</button><button id="camb">Cams</button><button id="phb">Physics</button><button id="snd">Sound: on</button><button id="xray">X-ray</button>
+  <span class="sep"></span>
+  <button id="camsel" aria-haspopup="true" title="Camera (C, or 1-9)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-cube"/></svg><span id="camname">Chase</span><i class="caret"></i></button>
+  <button id="xray" title="See through the shell (X)"><svg class="ic" viewBox="0 0 24 24"><use href="#i-eye"/></svg><span>X-ray</span></button>
+  <button id="tiltb"><svg class="ic" viewBox="0 0 24 24"><use href="#i-tilt"/></svg><span>Tilt</span></button>
+  <span class="grow"></span>
+  <button id="msb" data-panel="mis"><svg class="ic" viewBox="0 0 24 24"><use href="#i-flag"/></svg><span>Mission</span></button>
+  <button id="camb" title="Bob's webcam and thermal camera"><svg class="ic" viewBox="0 0 24 24"><use href="#i-feeds"/></svg><span>Feeds</span></button>
+  <button id="hwb" data-panel="hw"><svg class="ic" viewBox="0 0 24 24"><use href="#i-chip"/></svg><span>Hardware</span></button>
+  <button id="phb" data-panel="phys"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sliders"/></svg><span>Physics</span></button>
+  <button id="lkb" data-panel="lk"><svg class="ic" viewBox="0 0 24 24"><use href="#i-link"/></svg><span>Link</span></button>
+  <span class="sep"></span>
+  <button id="rpb"><svg class="ic" viewBox="0 0 24 24"><use href="#i-replay"/></svg>Replay</button>
+  <button id="rpsave" class="repOnly">Save run</button><button id="rpload" class="repOnly">Load run</button><button id="rpvid" class="repOnly">Export video</button><input id="rpfile" type="file" accept=".json,application/json" hidden>
+  <button id="photo" title="Save a picture of the 3D view"><svg class="ic" viewBox="0 0 24 24"><use href="#i-photo"/></svg><span>Photo</span></button>
+  <button id="snd"><svg class="ic" viewBox="0 0 24 24"><use href="#i-sound"/></svg><span>Sound on</span></button>
+  <button id="setb" data-panel="set"><svg class="ic" viewBox="0 0 24 24"><use href="#i-gear"/></svg><span>Settings</span></button>
+  <button id="bHelp"><svg class="ic" viewBox="0 0 24 24"><use href="#i-help"/></svg><span>Help</span></button>
  </div>
-</div>
+</nav>
+<div id="campop" class="panel pop" hidden><div id="cams" class="camgrid"></div></div>
+
 <div id="stL" class="stick"><small>DRIVE</small><i></i></div><div id="stR" class="stick"><small id="stRl">PIP TURN / UP</small><i></i></div>
 <div id="dpad" class="panel"><div class="dp"><span></span><button data-k="ArrowUp">▲</button><span></span><button data-k="ArrowLeft">◀</button><button data-k="ArrowDown">▼</button><button data-k="ArrowRight">▶</button></div><div class="dp2"><button data-k="KeyR">Up</button><button data-k="KeyF">Down</button></div></div>
-<div id="acts" class="panel"><button id="bPip">Launch Pip</button><button id="bDrop">Drop packet</button><button id="bFlap">Cargo flap</button><button id="bSwap">Switch</button></div>
+<div id="acts" class="panel">
+ <button id="bPip"><svg class="ic" viewBox="0 0 24 24"><use href="#i-pip"/></svg><span>Launch Pip</span><kbd>P</kbd></button>
+ <button id="bDrop"><svg class="ic" viewBox="0 0 24 24"><use href="#i-drop"/></svg><span>Drop packet</span><kbd>Space</kbd></button>
+ <button id="bFlap"><svg class="ic" viewBox="0 0 24 24"><use href="#i-flap"/></svg><span>Cargo flap</span><kbd>M</kbd></button>
+ <button id="bSwap"><svg class="ic" viewBox="0 0 24 24"><use href="#i-swap"/></svg><span>Switch</span><kbd>Tab</kbd></button>
+</div>
+
 <div id="mhud" class="panel"><div class="tm" id="m_t">0:00</div><div class="ob" id="m_1">○ Find the casualty (thermal)</div><div class="ob" id="m_2">○ Drop a packet near the casualty</div><div class="ob" id="m_3">○ Medicine packet into the drop zone</div><div class="ob" id="m_4">○ Land Pip and stop Bob</div><div class="sc" id="m_s"></div></div>
-<div id="mis" class="panel"><b>Mission</b><p>Find the casualty with the thermal camera, drop a packet next to them, deliver the medicine packet to the drop zone on the platform, land Pip and stop Bob. Faster and cleaner scores higher. Limit 10 minutes.</p>
-<div class="row"><label>Arena seed <input id="m_seed" type="number" min="0" max="99999" value="0"></label></div>
-<div class="row"><button id="m_rnd">Randomize</button><button id="m_cls">Classic</button></div>
-<p id="m_best"></p><div class="row"><button id="m_go" class="on">Start mission</button><button id="m_x">Close</button></div></div>
+
+<section id="mis" class="panel drawer"><div class="dh"><b>Mission</b><span class="sub">timed rescue run with a score</span></div>
+<p>Find the casualty with the thermal camera, drop a packet next to them, deliver the medicine packet to the drop zone on the platform, land Pip and stop Bob. Faster and cleaner scores higher. Knocked cones cost points. Limit 10 minutes.</p>
+<label class="lb">Arena</label>
+<div class="seg" id="m_kinds"></div><p class="mut" id="m_kdesc"></p>
+<div class="row"><label class="lb inl">Seed <input id="m_seed" type="number" min="0" max="99999" value="0"></label><button id="m_rnd">Randomize</button><button id="m_cls" hidden>Classic</button></div>
+<p id="m_best" class="mut"></p><div class="row"><button id="m_go" class="on big">Start mission</button><button id="m_x">Close</button></div></section>
+
 <div id="mend" class="panel"></div><div id="rpmark" class="panel">REPLAY</div>
-<div id="lk" class="panel"><b>Link to real code</b><p>Connect BOB to your own program over a WebSocket (the program is the server, this page is the client). Example: <code>ws://localhost:8765</code>. See BOB_sim_API.md.</p>
+
+<section id="lk" class="panel drawer"><div class="dh"><b>Link to real code</b><span class="sub">WebSocket</span></div><p>Connect BOB to your own program over a WebSocket (the program is the server, this page is the client). Example: <code>ws://localhost:8765</code>. See docs/SIMULATION.md.</p>
 <div class="row"><input id="lk_url" type="text" placeholder="ws://localhost:8765" spellcheck="false"></div>
-<div class="row"><button id="lk_go" class="on">Connect</button><button id="lk_x">Disconnect</button><button id="lk_c">Close</button></div><p id="lk_st">Not connected. Keyboard control is active.</p></div>
-<div id="help" class="panel"><h2>How to play</h2>
+<div class="row"><button id="lk_go" class="on">Connect</button><button id="lk_x">Disconnect</button><button id="lk_c">Close</button></div><p id="lk_st" class="mut">Not connected. Keyboard control is active.</p></section>
+
+<section id="hw" class="panel drawer wide"><div class="dh"><b>Hardware</b><span class="sub">what is inside BOB (25 Nov build)</span></div>
+ <div class="flow">
+  <div class="nd"><b>FlySky</b><small>transmitter</small></div><i class="ar"></i>
+  <div class="nd"><b>Receiver</b><small>iBUS, 1 wire</small></div><i class="ar"></i>
+  <div class="nd hot"><b>STM32</b><small>Nucleo-F446RE</small></div><i class="ar"></i>
+  <div class="nd"><b>2 × BTS7960</b><small>one per side</small></div><i class="ar"></i>
+  <div class="nd"><b>6 motors</b><small>JGB37-520 66 rpm</small></div>
+ </div>
+ <div class="flow sm">
+  <div class="nd"><b>Pi 3 B</b><small>+ USB webcam</small></div><i class="ar"></i><div class="nd"><b>Wi-Fi</b><small>video only</small></div>
+  <span class="gap"></span>
+  <div class="nd"><b>3S LiPo</b><small>fuse, switch, e-stop relay</small></div>
+ </div>
+ <div class="live">
+  <div class="lv"><span>STM32 state</span><span class="chip mute" id="hw_state">KEYBOARD</span></div>
+  <div class="lv"><span>Pi video</span><span class="chip mute" id="hw_pi">Idle</span></div>
+  <div class="lv"><span>Left driver</span><i class="mt"><b id="hw_dl"></b></i><em id="hw_dlv">0%</em></div>
+  <div class="lv"><span>Right driver</span><i class="mt"><b id="hw_dr"></b></i><em id="hw_drv">0%</em></div>
+  <div class="lv"><span>Pack</span><em><span id="hw_v">12.6 V</span> · <span id="hw_a">0.9 A</span></em></div>
+ </div>
+ <div class="sticks">
+  <div class="fs"><small>LEFT STICK (Pip yaw / up)</small><div class="pad"><i id="fs_l"></i></div></div>
+  <div class="fs"><small>RIGHT STICK (Bob drive)</small><div class="pad"><i id="fs_r"></i></div></div>
+ </div>
+ <table class="parts">
+  <tr><th>Part</th><th>Qty</th><th>What it does</th></tr>
+  <tr><td>JGB37-520 gearmotor, 12 V, 66 rpm</td><td>6</td><td>Drives the wheels (about 0.35 m/s, estimate)</td></tr>
+  <tr><td>BTS7960 motor driver</td><td>2</td><td>One per side, three motors each</td></tr>
+  <tr><td>STM32 Nucleo-F446RE</td><td>1</td><td>Tank mixing, failsafe, sensors</td></tr>
+  <tr><td>Raspberry Pi 3 Model B + webcam</td><td>1</td><td>Live video to the website</td></tr>
+  <tr><td>MLX90640 thermal, HC-SR04 ×3, IMU, INA226</td><td>6</td><td>Find people, range, tilt, battery</td></tr>
+  <tr><td>MG90S servo</td><td>3</td><td>Cargo flap and Pip latches</td></tr>
+  <tr><td>3S LiPo, 25-30 A fuse, e-stop relay</td><td>1</td><td>Power and hardware stop</td></tr>
+ </table>
+ <p class="mut">Motor torque is not confirmed by the seller, so the simulator keeps the torque slider you set. The preset below only changes top speed and mass.</p>
+ <div class="row"><button id="hw_real" class="on">Use the real parts</button><button id="hw_std">Back to the design numbers</button></div>
+</section>
+
+<section id="set" class="panel drawer"><div class="dh"><b>Settings</b><span class="sub">saved on this device</span></div>
+ <label class="lb">Graphics quality</label>
+ <div class="seg" id="set_q"><button data-v="low">Low</button><button data-v="med">Medium</button><button data-v="high">High</button></div>
+ <div class="rowl"><span>Shadows</span><button id="set_sh">On</button></div>
+ <div class="rowl"><span>Dust, smoke and sparks</span><button id="set_fx">On</button></div>
+ <div class="rowl"><span>Camera shake on impacts</span><button id="set_ck">On</button></div>
+ <div class="rowl"><span>Minimap</span><button id="set_mm">On</button></div>
+ <label class="lb">Sound mixer</label>
+ <div class="mxr">
+  <label><span>Master</span><em id="mxv_master">80%</em><input type="range" id="mx_master" min="0" max="100"></label>
+  <label><span>Motors</span><em id="mxv_motor">100%</em><input type="range" id="mx_motor" min="0" max="100"></label>
+  <label><span>Tyres and floor</span><em id="mxv_terrain">100%</em><input type="range" id="mx_terrain" min="0" max="100"></label>
+  <label><span>Pip fans</span><em id="mxv_pip">100%</em><input type="range" id="mx_pip" min="0" max="100"></label>
+  <label><span>Impacts and servos</span><em id="mxv_fx">100%</em><input type="range" id="mx_fx" min="0" max="100"></label>
+  <label><span>Alarms and beeps</span><em id="mxv_alert">100%</em><input type="range" id="mx_alert" min="0" max="100"></label>
+ </div>
+ <label class="lb">Sound check</label>
+ <div class="row wrapb"><button data-snd="cone">Cone</button><button data-snd="barrel">Barrel</button><button data-snd="wall">Wall</button><button data-snd="clunk">Rocker clunk</button><button data-snd="flap">Servo flap</button><button data-snd="lowbat">Low battery</button><button data-snd="arm">Armed</button><button data-snd="stop">E-stop relay</button><button data-snd="win">Mission done</button></div>
+</section>
+
+<section id="help" class="panel"><h2>How to play</h2>
 <p>Drive BOB through the arena yourself. The wheels, rocker arms, bogies and differential bar move for real as the ground changes under them.</p>
+<div class="cols">
 <table>
 <tr><th colspan="2">Driving BOB</th></tr>
 <tr><td><kbd>W</kbd> <kbd>S</kbd> or <kbd>↑</kbd> <kbd>↓</kbd></td><td>forward / reverse</td></tr>
 <tr><td><kbd>A</kbd> <kbd>D</kbd> or <kbd>←</kbd> <kbd>→</kbd></td><td>turn on the spot (tank steering)</td></tr>
 <tr><td><kbd>Shift</kbd></td><td>hold for slow, precise driving</td></tr>
-<tr><td><kbd>M</kbd></td><td>open or close the cargo flap (drops the medicine packet)</td></tr>
+<tr><td><kbd>M</kbd></td><td>cargo flap (drops the medicine packet)</td></tr>
 <tr><th colspan="2">Flying Pip</th></tr>
-<tr><td><kbd>P</kbd></td><td>launch Pip (Bob must be stopped and level), press again to auto-land</td></tr>
+<tr><td><kbd>P</kbd></td><td>launch Pip (Bob stopped and level), again to auto-land</td></tr>
 <tr><td><kbd>Tab</kbd></td><td>switch control between Bob and Pip</td></tr>
-<tr><td><kbd>W</kbd> <kbd>S</kbd> / <kbd>A</kbd> <kbd>D</kbd></td><td>Pip forward, back, strafe</td></tr>
-<tr><td><kbd>Q</kbd> <kbd>E</kbd> or <kbd>←</kbd> <kbd>→</kbd></td><td>turn Pip</td></tr>
+<tr><td><kbd>W</kbd><kbd>S</kbd><kbd>A</kbd><kbd>D</kbd></td><td>Pip forward, back, strafe</td></tr>
+<tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>turn Pip</td></tr>
 <tr><td><kbd>R</kbd> <kbd>F</kbd></td><td>Pip up / down</td></tr>
 <tr><td><kbd>Space</kbd></td><td>drop one of Pip's 3 packets</td></tr>
-<tr><th colspan="2">Mission, replay, link</th></tr>
-<tr><td><b>Mission</b></td><td>timed run with a score: find the casualty on the thermal camera, drop a packet next to them, deliver the medicine packet, land Pip. Pick an arena seed or press Randomize.</td></tr>
-<tr><td><b>Cams</b></td><td>shows Bob's webcam and the 32x24 thermal camera (the casualty glows hot)</td></tr>
-<tr><td><b>Replay</b></td><td>watch your last run again, save it to a file, load it later, or export a video</td></tr>
-<tr><td><b>Link</b></td><td>drive BOB from your own code over WebSocket (see BOB_sim_API.md)</td></tr>
-<tr><td>Phone</td><td>two on-screen sticks (left drives, right turns/lifts Pip), <b>Tilt</b> steers like a wheel. Landscape works best. A gamepad also works: sticks, A launch/land, B drop, X flap, Y switch, bumpers camera.</td></tr>
-<tr><th colspan="2">Other</th></tr>
-<tr><td><kbd>C</kbd></td><td>change camera (Chase, Side, Top, Pip cam, Free)</td></tr>
+</table>
+<table>
+<tr><th colspan="2">Cameras</th></tr>
+<tr><td><kbd>C</kbd></td><td>next camera</td></tr>
+<tr><td><kbd>1</kbd>–<kbd>9</kbd></td><td>Chase, Cinematic, Driver, Wheel, Side, Top, Pip follow, Pip cam, Free</td></tr>
 <tr><td><kbd>X</kbd></td><td>X-ray the shell</td></tr>
 <tr><td><kbd>Backspace</kbd></td><td>reset everything</td></tr>
+<tr><th colspan="2">The arena</th></tr>
+<tr><td><b>Cones</b></td><td>Bob can push them or knock them over. Each knocked cone costs 20 points.</td></tr>
+<tr><td><b>Arenas</b></td><td>Classic, Cone slalom, Rubble yard, or a random one from a seed (Mission menu).</td></tr>
+<tr><td><b>Hardware</b></td><td>shows the real parts inside BOB and lets you set the simulator to match them.</td></tr>
+<tr><td>Phone</td><td>two sticks (left drives, right turns/lifts Pip), <b>Tilt</b> steers like a wheel. A gamepad works too.</td></tr>
 </table>
-<p class="tip"><b>Try this:</b> 1. drive over the two logs and the blocks and watch the arms. 2. Stop near the casualty (the orange dummy), press <kbd>P</kbd>, fly Pip over it and drop a packet. 3. Land Pip with <kbd>P</kbd>. 4. Drive up the ramp to the glowing drop zone and press <kbd>M</kbd>. On a phone or tablet, use the on-screen buttons.</p>
-<div class="row"><button id="hPlay" class="on">Start playing</button><button id="hDemo">Watch the demo instead</button></div></div>
-<div id="phys" class="panel"><div class="ph"><b>Physics</b><button id="phOn" class="on">On</button></div>
+</div>
+<p class="tip"><b>Try this:</b> 1. drive over the logs and blocks and watch the arms. 2. Stop near the casualty, press <kbd>P</kbd>, fly Pip over them and drop a packet. 3. Land Pip with <kbd>P</kbd>. 4. Drive up the ramp to the glowing drop zone and press <kbd>M</kbd>.</p>
+<div class="row"><button id="hPlay" class="on big">Start playing</button><button id="hDemo">Watch the demo instead</button></div></section>
+
+<section id="phys" class="panel drawer"><div class="dh"><b>Physics</b><button id="phOn" class="on">On</button></div>
 <label><span>Bob mass (without Pip)</span><em id="v_m">4.9 kg</em><input type="range" id="s_m" min="3" max="12" step="0.1" value="4.9"></label>
 <label><span>Pip mass</span><em id="v_p">0.5 kg</em><input type="range" id="s_p" min="0.2" max="2" step="0.1" value="0.5"></label>
 <label><span>Motor stall torque (each)</span><em id="v_t">14 kg·cm</em><input type="range" id="s_t" min="2" max="30" step="1" value="14"></label>
+<label><span>No-load speed</span><em id="v_v">0.52 m/s</em><input type="range" id="s_v" min="0.2" max="0.8" step="0.01" value="0.52"></label>
 <label><span>Grip (friction)</span><em id="v_u">0.80</em><input type="range" id="s_u" min="0.1" max="1.2" step="0.05" value="0.8"></label>
 <label><span>Battery drain speed</span><em id="v_d">x1</em><input type="range" id="s_d" min="0" max="2" step="1" value="0"></label>
 <label><span>Ramp angle</span><em id="v_r">20°</em><input type="range" id="s_r" min="10" max="40" step="1" value="20"></label>
-<p>Off = simple arcade driving. On = motor torque, traction, slopes, load and tipping are simulated.</p>
-<button id="phDef">Defaults</button></div>
+<p class="mut">Off = simple arcade driving. On = motor torque, traction, slopes, load and tipping are simulated.</p>
+<button id="phDef">Defaults</button></section>
+
 <div id="camw" class="cfr"><span>BOB WEBCAM</span></div>
 <div id="camt" class="cfr"><span id="camtl">THERMAL 32x24</span><canvas id="tcv" width="32" height="24"></canvas><i id="thhot"></i></div>
-<div id="load">Loading simulation…</div>
+<div id="load"><div class="ld"><b>BOB</b><span>Loading simulation…</span><i class="spin"></i></div></div>
 <script src="vendor/three-r128.min.js"></script>
 <script src="vendor/three-r128-OrbitControls.js"></script>
 <script type="module" src="js/sim/main.js"></script>
